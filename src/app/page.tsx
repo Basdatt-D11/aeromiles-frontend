@@ -1,65 +1,131 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useAuth } from "@/context/AuthContext";
+
+export default function Dashboard() {
+  const { user } = useAuth();
+
+  // Mock static stats for UI testing
+  const mockUserStats = {
+    telepon: "+62 812-XXXX-XXXX",
+    no_member: "M-XXXX",
+    tier: "Blue",
+    total_miles: "15000",
+    klaim_menunggu: "2",
+    kode_maskapai: "GA",
+    klaim_disetujui: "10",
+    klaim_ditolak: "1",
+  };
+
+  if (!user) {
+    return (
+      <div className="alert alert-info">
+        Silakan <a href="/auth/login" className="alert-link">login</a> terlebih dahulu.
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <div className="mb-4">
+        <h2 className="fw-bold">Dashboard</h2>
+        <p className="text-muted">
+          Selamat datang, <span className="text-primary fw-semibold">{user.nama}</span>
+        </p>
+      </div>
+
+      <div className="card card-stat shadow-sm mb-4">
+        <div className="card-body p-4">
+          <h5 className="fw-bold mb-3">Informasi Pribadi</h5>
+          <div className="row g-4">
+            <div className="col-md-3">
+              <small className="text-muted d-block">Nama Lengkap:</small>
+              <span className="fw-semibold">{user.nama}</span>
+            </div>
+            <div className="col-md-3">
+              <small className="text-muted d-block">Email:</small>
+              <span className="fw-semibold">{user.email}</span>
+            </div>
+            <div className="col-md-3">
+              <small className="text-muted d-block">Role:</small>
+              <span className="fw-semibold">{user.role}</span>
+            </div>
+            <div className="col-md-3">
+              <small className="text-muted d-block">Telepon:</small>
+              <span className="fw-semibold">{mockUserStats.telepon}</span>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+
+      <div className="row g-3 mb-4">
+        {user.role === "Member" ? (
+          <>
+            <div className="col-md-3">
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-primary">
+                <small className="text-muted">Nomor Member</small>
+                <h4 className="fw-bold m-0">{mockUserStats.no_member}</h4>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-warning">
+                <small className="text-muted">Tier</small>
+                <h4 className="fw-bold m-0 text-warning">{mockUserStats.tier}</h4>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-info">
+                <small className="text-muted">Total Miles</small>
+                <h4 className="fw-bold m-0">{mockUserStats.total_miles}</h4>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-success">
+                <small className="text-muted">Klaim Menunggu</small>
+                <h4 className="fw-bold m-0">{mockUserStats.klaim_menunggu}</h4>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="col-md-2" style={{ width: "20%" }}>
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-dark bg-white h-100">
+                <i className="bi bi-person-badge text-muted mb-2" style={{ fontSize: "1.5rem" }}></i>
+                <small className="text-muted fw-medium">Email Staf</small>
+                <h6 className="fw-bold m-0" style={{ fontSize: "0.8rem" }}>{user.email}</h6>
+              </div>
+            </div>
+            <div className="col-md-2" style={{ width: "20%" }}>
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-primary bg-white h-100">
+                <i className="bi bi-airplane text-primary mb-2" style={{ fontSize: "1.5rem" }}></i>
+                <small className="text-muted fw-medium">Maskapai</small>
+                <h5 className="fw-bold m-0">{mockUserStats.kode_maskapai}</h5>
+              </div>
+            </div>
+            <div className="col-md-2" style={{ width: "20%" }}>
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-warning bg-white h-100">
+                <i className="bi bi-clock-history text-warning mb-2" style={{ fontSize: "1.5rem" }}></i>
+                <small className="text-muted fw-medium">Klaim Menunggu</small>
+                <h4 className="fw-bold m-0 text-warning">{mockUserStats.klaim_menunggu}</h4>
+              </div>
+            </div>
+            <div className="col-md-2" style={{ width: "20%" }}>
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-success bg-white h-100">
+                <i className="bi bi-check-circle-fill text-success mb-2" style={{ fontSize: "1.5rem" }}></i>
+                <small className="text-muted fw-medium">Klaim Disetujui</small>
+                <h4 className="fw-bold m-0 text-success">{mockUserStats.klaim_disetujui}</h4>
+              </div>
+            </div>
+            <div className="col-md-2" style={{ width: "20%" }}>
+              <div className="card card-stat shadow-sm p-3 border-start border-4 border-danger bg-white h-100">
+                <i className="bi bi-x-circle-fill text-danger mb-2" style={{ fontSize: "1.5rem" }}></i>
+                <small className="text-muted fw-medium">Klaim Ditolak</small>
+                <h4 className="fw-bold m-0 text-danger">{mockUserStats.klaim_ditolak}</h4>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }
