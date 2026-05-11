@@ -46,6 +46,7 @@ export default function RootLayout({
             }
           `
         }}></script>
+      </head>
       <body>
         <AuthProvider>
           <MainLayoutWrapper>
