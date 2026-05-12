@@ -10,14 +10,38 @@ export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    // Dummy login logic: if it contains 'admin' or 'staff', treat as Staff
-    const role = email.includes("admin") || email.includes("staff") ? "Staff" : "Member";
-    const name = role === "Staff" ? "Staff User" : "Member User";
-    login(email, role, name);
-    router.push("/");
+    setError("");
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setError(data.message || "Email atau password salah, silakan coba lagi.");
+        return;
+      }
+
+      const user = data.user || {};
+      const role = user.role || (email.includes("admin") || email.includes("staff") ? "Staff" : "Member");
+      const name = user.nama || `${user.first_mid_name || "Member"} ${user.last_name || "User"}`;
+
+      login(email, role, name);
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      setError("Terjadi error saat login. Silakan coba lagi.");
+    }
   };
 
   return (
@@ -51,6 +75,12 @@ export default function Login() {
           <form onSubmit={handleLogin}>
             <h5 className="text-lg font-bold mb-1 text-slate-900">Login</h5>
             <p className="text-slate-500 text-sm mb-6">Masukkan email dan password Anda</p>
+
+            {error && (
+              <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
             <div className="mb-4">
               <label className="block font-semibold text-sm text-slate-800 mb-1.5">Email</label>

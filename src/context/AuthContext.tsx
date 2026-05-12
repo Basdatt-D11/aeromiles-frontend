@@ -17,12 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Mock logged in user for development
-  const [user, setUser] = useState<User | null>({
-    email: "john@example.com",
-    role: "Member",
-    nama: "Mr. John William Doe"
-  });
+  const [user, setUser] = useState<User | null>(null);
 
   const login = (email: string, role: "Member" | "Staff", nama: string) => {
     setUser({ email, role, nama });

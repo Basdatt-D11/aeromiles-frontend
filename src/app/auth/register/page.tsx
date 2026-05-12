@@ -7,10 +7,64 @@ import { useRouter } from "next/navigation";
 export default function Register() {
   const router = useRouter();
   const [role, setRole] = useState("Member");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push("/auth/login");
+    setError("");
+    setSuccess("");
+
+    const formData = new FormData(e.currentTarget);
+    const password = formData.get("password")?.toString() || "";
+    const confirmPassword = formData.get("confirm_password")?.toString() || "";
+
+    if (password !== confirmPassword) {
+      setError("Password dan konfirmasi password harus sama.");
+      return;
+    }
+
+    const payload = {
+      email: formData.get("email")?.toString() || "",
+      password,
+      salutation: formData.get("salutation")?.toString() || "",
+      first_mid_name: formData.get("first_mid_name")?.toString() || "",
+      last_name: formData.get("last_name")?.toString() || "",
+      country_code: formData.get("country_code")?.toString() || "",
+      mobile_number: formData.get("mobile_number")?.toString() || "",
+      tanggal_lahir: formData.get("tanggal_lahir")?.toString() || "",
+      kewarganegaraan: formData.get("kewarganegaraan")?.toString() || "",
+      role
+    };
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setError(data.message || "Terjadi error saat registrasi.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      setSuccess("Registrasi berhasil. Silakan login.");
+      setIsSubmitting(false);
+      router.push("/auth/login");
+    } catch (err) {
+      console.error(err);
+      setError("Terjadi error saat registrasi. Silakan coba lagi.");
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -78,6 +132,17 @@ export default function Register() {
               </div>
             </div>
 
+            {error && (
+              <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {success}
+              </div>
+            )}
+
             <hr className="border-slate-200 my-6" />
 
             <h5 className="font-bold text-base text-slate-900 mb-4 mt-2">Data Pribadi</h5>
@@ -97,7 +162,7 @@ export default function Register() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block font-semibold text-sm text-slate-800 mb-1.5">Nama Depan <span className="text-red-500">*</span></label>
-                <input type="text" name="first_name" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
+                <input type="text" name="first_mid_name" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
               </div>
             </div>
             
@@ -108,7 +173,7 @@ export default function Register() {
               </div>
               <div>
                 <label className="block font-semibold text-sm text-slate-800 mb-1.5">Kewarganegaraan <span className="text-red-500">*</span></label>
-                <select name="nationality" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white" required>
+                <select name="kewarganegaraan" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white" required>
                   <option value="">Pilih negara</option>
                   <option value="ID">Indonesia</option>
                   <option value="SG">Singapore</option>
@@ -128,14 +193,14 @@ export default function Register() {
               </div>
               <div>
                 <label className="block font-semibold text-sm text-slate-800 mb-1.5">Nomor HP <span className="text-red-500">*</span></label>
-                <input type="text" name="phone" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
+                <input type="text" name="mobile_number" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block font-semibold text-sm text-slate-800 mb-1.5">Tanggal Lahir <span className="text-red-500">*</span></label>
-                <input type="date" name="birth_date" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
+                <input type="date" name="tanggal_lahir" className="w-full rounded-lg border-slate-300 border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
               </div>
             </div>
 
