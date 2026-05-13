@@ -12,26 +12,24 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const { email, password } = body;
-    const normalizedEmail = email?.trim().toLowerCase();
+    const {
+      email,
+      password
+    } = body;
 
     const result = await pool.query(
       `
       SELECT *
-      FROM pengguna
-      WHERE LOWER(email) = $1
-      AND password = $2
+      FROM verify_login(
+        $1,
+        $2
+      )
       `,
-      [normalizedEmail, password]
+      [
+        email,
+        password
+      ]
     );
-
-    if (result.rows.length === 0) {
-
-      return Response.json({
-        success: false,
-        message: "Email atau password salah, silakan coba lagi."
-      });
-    }
 
     return Response.json({
       success: true,
@@ -39,13 +37,13 @@ export async function POST(req: Request) {
       user: result.rows[0]
     });
 
-  } catch (error) {
+  } catch (error: any) {
 
     console.error(error);
 
     return Response.json({
       success: false,
-      message: "Terjadi error"
+      message: error.message.replace("ERROR: ", "")
     });
   }
 }

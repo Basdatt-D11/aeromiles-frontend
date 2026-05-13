@@ -28,15 +28,22 @@ export default function Login() {
       const data = await response.json();
 
       if (!data.success) {
-        setError(data.message || "Email atau password salah, silakan coba lagi.");
+        setError(data.message);
         return;
       }
 
       const user = data.user || {};
       const role = user.role || (email.includes("admin") || email.includes("staff") ? "Staff" : "Member");
       const name = user.nama || `${user.first_mid_name || "Member"} ${user.last_name || "User"}`;
+      const award_miles = user.award_miles ? Number(user.award_miles) : undefined;
 
-      login(email, role, name);
+      login({
+        email: user.email || email,
+        role,
+        nama: name,
+        award_miles
+      });
+
       router.push("/");
     } catch (err) {
       console.error(err);

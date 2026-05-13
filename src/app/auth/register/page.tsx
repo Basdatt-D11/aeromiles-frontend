@@ -52,7 +52,7 @@ export default function Register() {
       const data = await response.json();
 
       if (!data.success) {
-        setError(data.message || "Terjadi error saat registrasi.");
+        setError(data.message);
         setIsSubmitting(false);
         return;
       }
