@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const isActive = (path: string) => {
     return pathname === path ? "active-dashboard" : "";
@@ -97,13 +97,7 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-            
-            {!user && (
-              <Link className={`nav-item-aero ${isActive("/auth/login")}`} href="/auth/login">
-                <i className="bi bi-box-arrow-in-right"></i>
-                <span className="nav-text">Login</span>
-              </Link>
-            )}
+    
           </div>
         </div>
       </div>

@@ -1,21 +1,32 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock static stats for UI testing
-  const mockUserStats = {
-    telepon: "+62 812-XXXX-XXXX",
-    no_member: "M-XXXX",
-    tier: "Blue",
-    total_miles: "15000",
-    klaim_menunggu: "2",
-    kode_maskapai: "GA",
-    klaim_disetujui: "10",
-    klaim_ditolak: "1",
-  };
+  useEffect(() => {
+    const fetchMemberStats = async () => {
+      if (user?.email && user.role === "MEMBER") {
+        try {
+          const res = await fetch(`/api/member/stats?email=${user.email}`);
+          const data = await res.json();
+          setStats(data);
+        } catch (error) {
+          console.error("Gagal ambil stats:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    fetchMemberStats();
+  }, [user]);
 
   if (!user) {
     return (
@@ -27,14 +38,19 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="mb-4">
-        <h2 className="fw-bold">Dashboard</h2>
-        <p className="text-muted">
-          Selamat datang, <span className="text-primary fw-semibold">{user.nama}</span>
-        </p>
+      <div className="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+          <h2 className="fw-bold">Dashboard</h2>
+          <p className="text-muted">
+            Selamat datang, <span className="text-primary fw-semibold">{user.nama}</span>
+          </p>
+        </div>
+        <button onClick={logout} className="btn btn-outline-danger btn-sm">
+          <i className="bi bi-box-arrow-right me-1"></i> Logout
+        </button>
       </div>
 
-      <div className="card card-stat shadow-sm mb-4">
+      <div className="card shadow-sm mb-4 border-0">
         <div className="card-body p-4">
           <h5 className="fw-bold mb-3">Informasi Pribadi</h5>
           <div className="row g-4">
@@ -52,7 +68,7 @@ export default function Dashboard() {
             </div>
             <div className="col-md-3">
               <small className="text-muted d-block">Telepon:</small>
-              <span className="fw-semibold">{mockUserStats.telepon}</span>
+              <span className="fw-semibold">+62 812-XXXX-XXXX</span>
             </div>
           </div>
         </div>
@@ -62,68 +78,32 @@ export default function Dashboard() {
         {user.role === "MEMBER" ? (
           <>
             <div className="col-md-3">
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-primary">
+              <div className="card shadow-sm p-3 border-start border-4 border-primary border-0 h-100">
                 <small className="text-muted">Nomor Member</small>
-                <h4 className="fw-bold m-0">{mockUserStats.no_member}</h4>
+                <h4 className="fw-bold m-0">{loading ? "..." : (stats?.no_member || "N/A")}</h4>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-warning">
+              <div className="card shadow-sm p-3 border-start border-4 border-warning border-0 h-100">
                 <small className="text-muted">Tier</small>
-                <h4 className="fw-bold m-0 text-warning">{mockUserStats.tier}</h4>
+                <h4 className="fw-bold m-0 text-warning">{loading ? "..." : (stats?.tier || "Blue")}</h4>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-info">
+              <div className="card shadow-sm p-3 border-start border-4 border-info border-0 h-100">
+                <small className="text-muted">Award Miles</small>
+                <h4 className="fw-bold m-0">{loading ? "..." : (stats?.award_miles || "0")}</h4>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="card shadow-sm p-3 border-start border-4 border-success border-0 h-100">
                 <small className="text-muted">Total Miles</small>
-                <h4 className="fw-bold m-0">{mockUserStats.total_miles}</h4>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-success">
-                <small className="text-muted">Klaim Menunggu</small>
-                <h4 className="fw-bold m-0">{mockUserStats.klaim_menunggu}</h4>
+                <h4 className="fw-bold m-0">{loading ? "..." : (stats?.total_miles || "0")}</h4>
               </div>
             </div>
           </>
         ) : (
-          <>
-            <div className="col-md-2" style={{ width: "20%" }}>
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-dark bg-white h-100">
-                <i className="bi bi-person-badge text-muted mb-2" style={{ fontSize: "1.5rem" }}></i>
-                <small className="text-muted fw-medium">Email Staf</small>
-                <h6 className="fw-bold m-0" style={{ fontSize: "0.8rem" }}>{user.email}</h6>
-              </div>
-            </div>
-            <div className="col-md-2" style={{ width: "20%" }}>
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-primary bg-white h-100">
-                <i className="bi bi-airplane text-primary mb-2" style={{ fontSize: "1.5rem" }}></i>
-                <small className="text-muted fw-medium">Maskapai</small>
-                <h5 className="fw-bold m-0">{mockUserStats.kode_maskapai}</h5>
-              </div>
-            </div>
-            <div className="col-md-2" style={{ width: "20%" }}>
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-warning bg-white h-100">
-                <i className="bi bi-clock-history text-warning mb-2" style={{ fontSize: "1.5rem" }}></i>
-                <small className="text-muted fw-medium">Klaim Menunggu</small>
-                <h4 className="fw-bold m-0 text-warning">{mockUserStats.klaim_menunggu}</h4>
-              </div>
-            </div>
-            <div className="col-md-2" style={{ width: "20%" }}>
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-success bg-white h-100">
-                <i className="bi bi-check-circle-fill text-success mb-2" style={{ fontSize: "1.5rem" }}></i>
-                <small className="text-muted fw-medium">Klaim Disetujui</small>
-                <h4 className="fw-bold m-0 text-success">{mockUserStats.klaim_disetujui}</h4>
-              </div>
-            </div>
-            <div className="col-md-2" style={{ width: "20%" }}>
-              <div className="card card-stat shadow-sm p-3 border-start border-4 border-danger bg-white h-100">
-                <i className="bi bi-x-circle-fill text-danger mb-2" style={{ fontSize: "1.5rem" }}></i>
-                <small className="text-muted fw-medium">Klaim Ditolak</small>
-                <h4 className="fw-bold m-0 text-danger">{mockUserStats.klaim_ditolak}</h4>
-              </div>
-            </div>
-          </>
+          <div className="col-12 text-muted">Halaman khusus Staf</div>
         )}
       </div>
     </>

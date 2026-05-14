@@ -12,7 +12,7 @@ export async function GET(req: Request) {
        FROM member m
        LEFT JOIN tier t ON m.id_tier = t.id_tier
        WHERE m.email = $1`,
-      [email] 
+      [email]
     );
 
     if (result.rows.length === 0) {
