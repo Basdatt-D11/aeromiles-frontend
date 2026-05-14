@@ -1,23 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
 
 export default function RedeemList() {
-  const [rewards] = useState([
-    { id: "R01", name: "Tiket Garuda PP Jakarta - Bali", description: "Kelas Ekonomi", miles: 15000, image: "https://via.placeholder.com/120x80?text=GA" },
-    { id: "R02", name: "Voucher Hotel Bintang 5 Bali", description: "1 Malam", miles: 10000, image: "https://via.placeholder.com/120x80?text=Hotel" },
-  ]);
+  const { user } = useAuth();
+  const [rewards, setRewards] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [userStats, setUserStats] = useState<any>(null);
+  const [selectedReward, setSelectedReward] = useState<{kode: string, nama: string, miles: number} | null>(null);
+  const [message, setMessage] = useState({ text: "", type: "" });
 
-  const [history] = useState([
-    { id: 1, reward: "Voucher Lounge", miles: 2000, status: "Sukses", date: "2024-05-01" },
-    { id: 2, reward: "Upgrade Business Class", miles: 25000, status: "Sukses", date: "2024-03-15" },
-  ]);
+  // 1. Fetch Data Awal (Rewards, History, & Saldo)
+  const fetchData = async () => {
+    if (!user?.email) return;
+    try {
+      // Ambil Daftar Hadiah
+      const resRewards = await fetch("/api/hadiah");
+      const dataRewards = await resRewards.json();
+      setRewards(dataRewards);
 
-  const [selectedReward, setSelectedReward] = useState<{id: string, name: string, miles: number} | null>(null);
+      // Ambil Saldo Miles (Pake API stats yang kita buat tadi)
+      const resStats = await fetch(`/api/member/stats?email=${user.email}`);
+      const dataStats = await resStats.json();
+      setUserStats(dataStats);
 
-  const handleConfirmRedeem = () => {
-    if (selectedReward) {
-      alert(`Redeem dikonfirmasi untuk reward id: ${selectedReward.id}\n(Ini demo; hubungkan ke backend untuk eksekusi nyata)`);
+      // Ambil Riwayat (Nanti lu buat API GET /api/redeem/history)
+      // Sementara kita fokus ke fitur intinya dulu
+    } catch (err) {
+      console.error("Gagal fetch data:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [user]);
+
+  // 2. Fungsi Eksekusi Redeem (Ke Backend -> Trigger Postgres)
+  const handleConfirmRedeem = async () => {
+    if (!selectedReward || !user) return;
+    
+    setMessage({ text: "", type: "" });
+
+    try {
+      const res = await fetch("/api/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email_member: user.email,
+          kode_hadiah: selectedReward.kode,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Nangkep ERROR: Saldo tidak mencukupi / Hadiah tidak aktif
+        throw new Error(data.error);
+      }
+
+      // Jika Berhasil (Pesan SUKSES dari Trigger)
+      setMessage({ text: data.message || `Berhasil redeem ${selectedReward.nama}!`, type: "success" });
+      fetchData(); // Refresh saldo dan list
+    } catch (err: any) {
+      setMessage({ text: err.message, type: "danger" });
     }
   };
 
@@ -25,33 +71,43 @@ export default function RedeemList() {
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="m-0">Redeem Hadiah</h4>
-          <small className="text-muted">Pilih hadiah yang ingin Anda tukarkan dengan miles</small>
+          <h4 className="m-0 fw-bold">Redeem Hadiah</h4>
+          <small className="text-muted">Tukarkan miles Anda dengan reward menarik</small>
         </div>
         <div>
-          <span className="badge bg-light text-dark">Saldo Miles: <strong>75.000</strong></span>
+          <span className="badge bg-primary p-2">
+            Saldo Miles: <strong>{userStats?.award_miles?.toLocaleString() || "0"}</strong>
+          </span>
         </div>
       </div>
 
+      {/* Alert Message untuk User */}
+      {message.text && (
+        <div className={`alert alert-${message.type} shadow-sm mb-4`} role="alert">
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}-fill me-2`}></i>
+          {message.text}
+        </div>
+      )}
+
       <div className="row g-3 mb-4">
         {rewards.map((r) => (
-          <div key={r.id} className="col-md-6">
-            <div className="card p-3 d-flex flex-row align-items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={r.image} alt={r.name} style={{ width: "120px", height: "80px", objectFit: "cover", borderRadius: "8px" }} />
+          <div key={r.kode} className="col-md-6">
+            <div className="card p-3 d-flex flex-row align-items-center border-0 shadow-sm">
+              <div className="bg-light rounded d-flex align-items-center justify-content-center" style={{ width: "100px", height: "70px" }}>
+                <i className="bi bi-gift text-primary" style={{ fontSize: "2rem" }}></i>
+              </div>
               <div className="ms-3 flex-grow-1">
-                <h6 className="mb-1">{r.name}</h6>
-                <p className="mb-1 text-muted small">{r.description}</p>
+                <h6 className="mb-1 fw-bold">{r.nama}</h6>
                 <div className="d-flex gap-2 align-items-center">
-                  <span className="badge bg-info text-white">{r.miles} miles</span>
+                  <span className="badge bg-info-subtle text-info border border-info-subtle">{r.miles} miles</span>
                 </div>
               </div>
               <div className="ms-3">
                 <button 
-                  className="btn btn-primary btn-action" 
+                  className="btn btn-primary btn-sm px-3" 
                   data-bs-toggle="modal" 
                   data-bs-target="#redeemModal"
-                  onClick={() => setSelectedReward({ id: r.id, name: r.name, miles: r.miles })}
+                  onClick={() => setSelectedReward({ kode: r.kode, nama: r.nama, miles: r.miles })}
                 >
                   Redeem
                 </button>
@@ -61,53 +117,41 @@ export default function RedeemList() {
         ))}
       </div>
 
-      <h5 className="mb-2">Riwayat Redeem</h5>
-      <div className="table-container p-3">
-        <table className="table mb-0 align-middle">
-          <thead>
+      {/* Tabel Riwayat (Bisa lu kembangin nanti buat fetch data dari tabel REDEEM) */}
+      <h5 className="fw-bold mb-3">Riwayat Terbaru</h5>
+      <div className="card border-0 shadow-sm p-3">
+        <table className="table table-hover mb-0">
+          <thead className="table-light">
             <tr>
-              <th>#</th>
               <th>Hadiah</th>
               <th>Miles</th>
-              <th>Status</th>
               <th>Tanggal</th>
             </tr>
           </thead>
           <tbody>
-            {history.map((h) => (
-              <tr key={h.id}>
-                <td>{h.id}</td>
-                <td>{h.reward}</td>
-                <td>{h.miles}</td>
-                <td>{h.status}</td>
-                <td>{h.date}</td>
-              </tr>
-            ))}
-            {history.length === 0 && (
-              <tr>
-                <td colSpan={5} className="text-center text-muted py-4">Belum ada data.</td>
-              </tr>
-            )}
+            <tr className="small">
+              <td colSpan={3} className="text-center text-muted py-3">Klik tombol redeem untuk memulai transaksi</td>
+            </tr>
           </tbody>
         </table>
       </div>
 
-      {/* Redeem Modal */}
+      {/* Modal Konfirmasi (Tetep pake Bootstrap murni sesuai layout.tsx lu) */}
       <div className="modal fade" id="redeemModal" tabIndex={-1} aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Konfirmasi Redeem</h5>
+        <div className="modal-dialog modal-dialog-centered border-0">
+          <div className="modal-content border-0 shadow">
+            <div className="modal-header border-0">
+              <h5 className="modal-title fw-bold">Konfirmasi Tukar Miles</h5>
               <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div className="modal-body">
-              <p>Apakah Anda yakin ingin menukarkan:</p>
-              <p className="fw-semibold">{selectedReward?.name}</p>
-              <p className="text-muted">{selectedReward?.miles} miles</p>
+            <div className="modal-body text-center py-4">
+              <i className="bi bi-question-circle text-warning" style={{ fontSize: "3rem" }}></i>
+              <p className="mt-3">Apakah Anda yakin ingin menukarkan <strong>{selectedReward?.miles} miles</strong> untuk:</p>
+              <h5 className="fw-bold text-primary">{selectedReward?.nama}</h5>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer border-0">
               <button type="button" className="btn btn-light" data-bs-dismiss="modal">Batal</button>
-              <button type="button" className="btn btn-primary" onClick={handleConfirmRedeem} data-bs-dismiss="modal">Konfirmasi</button>
+              <button type="button" className="btn btn-primary px-4" onClick={handleConfirmRedeem} data-bs-dismiss="modal">Ya, Tukarkan!</button>
             </div>
           </div>
         </div>
