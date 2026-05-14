@@ -21,14 +21,17 @@ export async function POST(req: Request) {
       country_code,
       mobile_number,
       tanggal_lahir,
-      kewarganegaraan
+      kewarganegaraan,
+      role,
+      airline_code
     } = body;
 
     await pool.query(
       `
       CALL register_user(
         $1,$2,$3,$4,$5,
-        $6,$7,$8,$9
+        $6,$7,$8,$9,
+        $10,$11
       )
       `,
       [
@@ -40,7 +43,9 @@ export async function POST(req: Request) {
         country_code,
         mobile_number,
         tanggal_lahir,
-        kewarganegaraan
+        kewarganegaraan,
+        role,
+        airline_code || null
       ]
     );
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function Register() {
   const router = useRouter();
-  const [role, setRole] = useState("Member");
+  const [role, setRole] = useState("MEMBER");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,10 +108,10 @@ export default function Register() {
             `}} />
 
             <div className="segmented-control flex bg-slate-100 rounded-lg p-1 mb-6">
-              <input type="radio" id="roleMember" name="role" value="Member" className="hidden" checked={role === "Member"} onChange={() => setRole("Member")} />
+              <input type="radio" id="roleMember" name="role" value="MEMBER" className="hidden" checked={role === "MEMBER"} onChange={() => setRole("MEMBER")} />
               <label htmlFor="roleMember" className="flex-1 text-center py-2.5 rounded-md cursor-pointer font-semibold text-sm text-slate-500 transition-all m-0">Member</label>
               
-              <input type="radio" id="roleStaff" name="role" value="Staff" className="hidden" checked={role === "Staff"} onChange={() => setRole("Staff")} />
+              <input type="radio" id="roleStaff" name="role" value="STAFF" className="hidden" checked={role === "STAFF"} onChange={() => setRole("STAFF")} />
               <label htmlFor="roleStaff" className="flex-1 text-center py-2.5 rounded-md cursor-pointer font-semibold text-sm text-slate-500 transition-all m-0">Staf</label>
             </div>
 
@@ -204,7 +204,7 @@ export default function Register() {
               </div>
             </div>
 
-            {role === "Staff" && (
+            {role === "STAFF" && (
               <div id="dataStafSection">
                 <hr className="border-slate-200 my-6" />
                 <h5 className="font-bold text-base text-slate-900 mb-4 mt-2">Data Staf</h5>

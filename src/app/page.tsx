@@ -59,7 +59,7 @@ export default function Dashboard() {
       </div>
 
       <div className="row g-3 mb-4">
-        {user.role === "Member" ? (
+        {user.role === "MEMBER" ? (
           <>
             <div className="col-md-3">
               <div className="card card-stat shadow-sm p-3 border-start border-4 border-primary">
