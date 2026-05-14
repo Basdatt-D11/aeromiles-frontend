@@ -85,7 +85,7 @@ export default function Register() {
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto mt-12 text-center px-4">
+      <div className="max-w-3xl mx-auto mt-12 flex flex-col items-center text-center px-4">
         <div className="w-16 h-16 bg-brand-iconBg text-white rounded-2xl inline-flex items-center justify-center text-3xl mb-4 shadow-sm">
           <i className="bi bi-airplane"></i>
         </div>
