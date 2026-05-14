@@ -33,8 +33,9 @@ export default function Login() {
       }
 
       const user = data.user || {};
-      const role = user.role || (email.includes("admin") || email.includes("staff") ? "Staff" : "Member");
-      const name = user.nama || `${user.first_mid_name || "Member"} ${user.last_name || "User"}`;
+      // Use role dari database langsung (MEMBER atau STAFF)
+      const role = user.role;
+      const name = user.nama || `${user.first_mid_name || "User"} ${user.last_name || "Account"}`;
       const award_miles = user.award_miles ? Number(user.award_miles) : undefined;
 
       login({

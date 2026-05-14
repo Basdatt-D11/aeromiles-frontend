@@ -28,7 +28,7 @@ export default function Navbar() {
           </div>
 
           <div className="d-flex ms-auto gap-1">
-            {user?.role === "Staff" && (
+            {user?.role === "STAFF" && (
               <>
                 <Link className={`nav-item-aero ${isActive("/members/list")}`} href="/members/list">
                   <i className="bi bi-people-fill"></i>
@@ -61,7 +61,7 @@ export default function Navbar() {
               </>
             )}
 
-            {user?.role === "Member" && (
+            {user?.role === "MEMBER" && (
               <>
                 <Link className={`nav-item-aero ${isActive("/members/identitas")}`} href="/members/identitas">
                   <i className="bi bi-file-earmark-person-fill"></i>

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 
 interface User {
   email: string;
-  role: "Member" | "Staff";
+  role: "MEMBER" | "STAFF";
   nama: string;
   award_miles?: number;
 }
