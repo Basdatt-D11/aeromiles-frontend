@@ -4,12 +4,23 @@ import { useEffect, useState } from "react";
 
 export default function LaporanTransaksi() {
   const [report, setReport] = useState<any>(null);
+  const [top5Message, setTop5Message] = useState<string | null>(null); // State baru untuk nampung pesan Stored Procedure
 
   useEffect(() => {
+    // 1. Fetch data laporan statistik bawaan
     fetch("/api/report")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setReport(data.data);
+      })
+      .catch((err) => console.error(err));
+
+    // 2. Fetch khusus untuk pesan Stored Procedure Top 5 Member
+    fetch("/api/report/top5")
+      .then((res) => res.json())
+      .then((data) => {
+        // Menangkap pesan yang berasal dari RAISE EXCEPTION database
+        if (data.success) setTop5Message(data.message);
       })
       .catch((err) => console.error(err));
   }, []);
@@ -20,6 +31,14 @@ export default function LaporanTransaksi() {
         <h2 className="fw-bold mb-1">Laporan Transaksi</h2>
         <p className="text-muted">Ringkasan aktivitas dan transaksi sistem AeroMiles</p>
       </div>
+
+      {/* TAMPILAN PESAN DARI DATABASE (TUGAS MERAH) */}
+      {top5Message && (
+        <div className="alert alert-success shadow-sm mb-4 fw-medium border-0 border-start border-4 border-success" role="alert">
+          <i className="bi bi-info-circle-fill me-2"></i>
+          {top5Message}
+        </div>
+      )}
 
       {report ? (
         <div className="row g-4">

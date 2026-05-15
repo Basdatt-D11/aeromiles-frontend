@@ -13,14 +13,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia } = body;
+    const { nama, miles, deskripsi, valid_start_date, program_end, id_penyedia } = body;
     
     await pool.query(
-      "INSERT INTO HADIAH (kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-      [kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia]
+      `INSERT INTO HADIAH (nama, miles, deskripsi, valid_start_date, program_end, id_penyedia) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [nama, miles, deskripsi, valid_start_date, program_end, id_penyedia]
     );
     
-    return NextResponse.json({ success: true }, { status: 201 });
+    return NextResponse.json({ success: true, message: "Hadiah berhasil ditambahkan!" }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });
   }
@@ -29,14 +30,16 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
+    // Destructuring menggunakan kode_hadiah sesuai frontend
     const { kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia } = body;
     
     await pool.query(
-      "UPDATE HADIAH SET nama = $1, miles = $2, deskripsi = $3, valid_start_date = $4, program_end = $5, id_penyedia = $6 WHERE kode_hadiah = $7",
+      `UPDATE HADIAH SET nama = $1, miles = $2, deskripsi = $3, valid_start_date = $4, 
+       program_end = $5, id_penyedia = $6 WHERE kode = $7`,
       [nama, miles, deskripsi, valid_start_date, program_end, id_penyedia, kode_hadiah]
     );
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Hadiah berhasil diperbarui!" });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });
   }
@@ -45,9 +48,9 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const url = new URL(request.url);
-    const kode_hadiah = url.searchParams.get("kode");
+    const kode = url.searchParams.get("kode");
     
-    await pool.query("DELETE FROM HADIAH WHERE kode_hadiah = $1", [kode_hadiah]);
+    await pool.query("DELETE FROM HADIAH WHERE kode = $1", [kode]);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
