@@ -26,27 +26,16 @@ export async function GET(req: Request) {
 
     return Response.json({ success: true, history: result.rows });
   } catch (error) {
-    console.error(error);
     return Response.json({ success: false, message: "Terjadi error" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
-
   const client = await pool.connect();
-
   try {
-
     const body = await req.json();
+    const { email_member_1, email_member_2, jumlah, catatan } = body;
 
-    const {
-      email_member_1,
-      email_member_2,
-      jumlah,
-      catatan
-    } = body;
-
-    // Call stored procedure
     const result = await client.query(
       'SELECT transfer_miles($1, $2, $3, $4) AS message',
       [email_member_1, email_member_2, jumlah, catatan || '-']
@@ -56,18 +45,12 @@ export async function POST(req: Request) {
       success: true,
       message: result.rows[0].message
     });
-
   } catch (error: any) {
-
-    console.error(error);
-
     return Response.json({
       success: false,
       message: error.message || "Terjadi error"
     });
-
   } finally {
-
     client.release();
   }
 }
