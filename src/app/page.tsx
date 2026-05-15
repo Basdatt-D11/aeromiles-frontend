@@ -1,11 +1,20 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/auth/login");
+    }
+  }, [user, isLoading, router]);
   
-  if (!user) return <div className="text-center mt-5">Memuat data...</div>;
+  if (isLoading || !user) return <div className="text-center mt-5">Memuat data...</div>;
 
   const role = user.role === "STAFF" ? "Staff" : "Member";
 
