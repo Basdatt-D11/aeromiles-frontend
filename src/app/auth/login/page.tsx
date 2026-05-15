@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -22,7 +24,7 @@ export default function Login() {
       const data = await res.json();
 
       if (data.success) {
-        // Di sini nantinya kamu simpan data user ke State/Context, untuk sementara langsung redirect ke Dashboard
+        login(data.user);
         router.push("/");
       } else {
         setError(data.message);

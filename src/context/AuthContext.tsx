@@ -6,6 +6,17 @@ interface User {
   email: string;
   role: "MEMBER" | "STAFF";
   nama: string;
+  salutation?: string;
+  first_mid_name?: string;
+  last_name?: string;
+  country_code?: string;
+  mobile_number?: string;
+  tanggal_lahir?: string;
+  kewarganegaraan?: string;
+  nomor_member?: string;
+  tanggal_bergabung?: string;
+  id_staf?: string;
+  kode_maskapai?: string;
   award_miles?: number;
 }
 

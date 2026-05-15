@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       FROM transfer
       WHERE LOWER(email_member_1) = LOWER($1)
          OR LOWER(email_member_2) = LOWER($1)
-      ORDER BY timestamp DESC
+      ORDER BY transfer_timestamp DESC
       `,
       [email]
     );

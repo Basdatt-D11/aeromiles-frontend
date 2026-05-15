@@ -14,12 +14,10 @@ export async function POST(req: Request) {
       role, airline_code
     } = body;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     await pool.query(
       `CALL register_user($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [
-        email, hashedPassword, salutation, first_mid_name, last_name,
+        email, password, salutation, first_mid_name, last_name,
         country_code, mobile_number, tanggal_lahir, kewarganegaraan,
         role, airline_code || null
       ]

@@ -10,13 +10,19 @@ export async function GET(request: Request) {
     let params: any[] = [];
 
     if (email) {
-      query = "SELECT * FROM IDENTITAS WHERE email_member = $1";
+      query = `
+        SELECT i.* 
+        FROM IDENTITAS i
+        JOIN MEMBER m ON i.nomor_member = m.nomor_member
+        WHERE m.email = $1
+      `;
       params = [email];
     }
 
     const result = await pool.query(query, params);
     return NextResponse.json({ success: true, data: result.rows });
   } catch (error: any) {
+    console.error("Error in GET /api/identitas:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
@@ -24,12 +30,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nomor, email_member, tanggal_habis, tanggal_terbit, negara_penerbit, jenis } = body;
+    const { no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis, status } = body;
 
     await pool.query(
-      `INSERT INTO IDENTITAS (nomor, email_member, tanggal_habis, tanggal_terbit, negara_penerbit, jenis) 
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [nomor, email_member, tanggal_habis, tanggal_terbit, negara_penerbit, jenis]
+      `INSERT INTO IDENTITAS (no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis, status || 'Aktif']
     );
 
     return NextResponse.json({ success: true, message: "Identitas berhasil ditambahkan!" }, { status: 201 });
@@ -41,13 +47,13 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { nomor, tanggal_habis, tanggal_terbit, negara_penerbit, jenis } = body;
+    const { no_dokumen, tgl_habis, tgl_terbit, negara, jenis, status } = body;
 
     const result = await pool.query(
       `UPDATE IDENTITAS 
-       SET tanggal_habis = $1, tanggal_terbit = $2, negara_penerbit = $3, jenis = $4 
-       WHERE nomor = $5`,
-      [tanggal_habis, tanggal_terbit, negara_penerbit, jenis, nomor]
+       SET tgl_habis = $1, tgl_terbit = $2, negara = $3, jenis = $4, status = $5 
+       WHERE no_dokumen = $6`,
+      [tgl_habis, tgl_terbit, negara, jenis, status, no_dokumen]
     );
 
     if (result.rowCount === 0) {
@@ -63,13 +69,13 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const url = new URL(request.url);
-    const nomor = url.searchParams.get("nomor");
+    const no_dokumen = url.searchParams.get("no_dokumen");
 
-    if (!nomor) {
+    if (!no_dokumen) {
       return NextResponse.json({ success: false, message: "Nomor identitas diperlukan" }, { status: 400 });
     }
 
-    const result = await pool.query("DELETE FROM IDENTITAS WHERE nomor = $1", [nomor]);
+    const result = await pool.query("DELETE FROM IDENTITAS WHERE no_dokumen = $1", [no_dokumen]);
 
     if (result.rowCount === 0) {
       return NextResponse.json({ success: false, message: "Identitas tidak ditemukan" }, { status: 404 });
