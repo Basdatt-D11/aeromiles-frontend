@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const result = await pool.query("SELECT * FROM HADIAH");
+    const result = await pool.query("SELECT * FROM MITRA ORDER BY tanggal_kerja_sama DESC");
     return NextResponse.json({ success: true, data: result.rows });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
@@ -13,11 +13,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia } = body;
+    const { email_mitra, id_penyedia, nama_mitra, tanggal_kerja_sama } = body;
     
     await pool.query(
-      "INSERT INTO HADIAH (kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-      [kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia]
+      "INSERT INTO MITRA (email_mitra, id_penyedia, nama_mitra, tanggal_kerja_sama) VALUES ($1, $2, $3, $4)",
+      [email_mitra, id_penyedia, nama_mitra, tanggal_kerja_sama]
     );
     
     return NextResponse.json({ success: true }, { status: 201 });
@@ -29,11 +29,11 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { kode_hadiah, nama, miles, deskripsi, valid_start_date, program_end, id_penyedia } = body;
+    const { email_mitra, id_penyedia, nama_mitra, tanggal_kerja_sama } = body;
     
     await pool.query(
-      "UPDATE HADIAH SET nama = $1, miles = $2, deskripsi = $3, valid_start_date = $4, program_end = $5, id_penyedia = $6 WHERE kode_hadiah = $7",
-      [nama, miles, deskripsi, valid_start_date, program_end, id_penyedia, kode_hadiah]
+      "UPDATE MITRA SET id_penyedia = $1, nama_mitra = $2, tanggal_kerja_sama = $3 WHERE email_mitra = $4",
+      [id_penyedia, nama_mitra, tanggal_kerja_sama, email_mitra]
     );
     
     return NextResponse.json({ success: true });
@@ -45,9 +45,9 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const url = new URL(request.url);
-    const kode_hadiah = url.searchParams.get("kode");
+    const email_mitra = url.searchParams.get("email");
     
-    await pool.query("DELETE FROM HADIAH WHERE kode_hadiah = $1", [kode_hadiah]);
+    await pool.query("DELETE FROM MITRA WHERE email_mitra = $1", [email_mitra]);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

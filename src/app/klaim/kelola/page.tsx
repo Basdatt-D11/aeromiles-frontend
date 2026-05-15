@@ -1,177 +1,102 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function KelolaKlaim() {
-  const [klaims] = useState([
-    { id: 1, member_nama: "John Doe", member_email: "john@example.com", maskapai: "Garuda Indonesia", bandara_asal: "CGK", bandara_tujuan: "DPS", tanggal_penerbangan: "2024-05-01", flight_number: "GA402", kelas_kabin: "Economy", status: "Menunggu", timestamp_pengajuan: "2024-05-10 10:00:00" },
-    { id: 2, member_nama: "Alice Smith", member_email: "alice@example.com", maskapai: "Singapore Airlines", bandara_asal: "SIN", bandara_tujuan: "CGK", tanggal_penerbangan: "2024-04-15", flight_number: "SQ950", kelas_kabin: "Business", status: "Menunggu", timestamp_pengajuan: "2024-04-20 09:30:00" },
-  ]);
+  const [semuaKlaim, setSemuaKlaim] = useState<any[]>([]);
+  const emailStaf = "admin@aeromiles.com"; // Hardcoded sementara
 
-  const [selectedKlaim, setSelectedKlaim] = useState<any>(null);
-
-  const handleApprove = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Klaim disetujui (demo)");
-    const modalEl = document.getElementById("approveModal");
-    if (modalEl) {
-      // @ts-ignore
-      const modal = window.bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
+  const fetchKlaim = async () => {
+    try {
+      const res = await fetch("/api/klaim");
+      const data = await res.json();
+      if (data.success) setSemuaKlaim(data.data);
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const handleReject = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Klaim ditolak (demo)");
-    const modalEl = document.getElementById("rejectModal");
-    if (modalEl) {
-      // @ts-ignore
-      const modal = window.bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
+  useEffect(() => {
+    fetchKlaim();
+  }, []);
+
+  const handleAction = async (id: number, status: string) => {
+    if (!confirm(`Apakah Anda yakin ingin ${status} klaim ini?`)) return;
+
+    try {
+      const res = await fetch("/api/klaim/kelola", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status_penerimaan: status, email_staf: emailStaf }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Klaim berhasil di-${status.toLowerCase()}`);
+        fetchKlaim();
+      } else {
+        alert("Gagal memperbarui klaim: " + data.message);
+      }
+    } catch (error) {
+      alert("Terjadi kesalahan sistem.");
     }
   };
 
   return (
     <>
-      <div className="row mb-4">
-        <div className="col">
-          <h4 className="fw-bold mb-3">Kelola Klaim Missing Miles</h4>
-          <div className="d-flex flex-wrap gap-2 mb-3">
-            <select className="form-select form-select-sm w-auto">
-              <option>Semua Status</option>
-              <option>Menunggu</option>
-              <option>Disetujui</option>
-              <option>Ditolak</option>
-            </select>
-            <select className="form-select form-select-sm w-auto">
-              <option>Semua Maskapai</option>
-              <option>Garuda Indonesia</option>
-              <option>Singapore Airlines</option>
-            </select>
-            <input type="date" className="form-control form-control-sm w-auto" placeholder="Tanggal Pengajuan" />
-          </div>
-        </div>
+      <div className="mb-4">
+        <h2 className="fw-bold mb-1">Kelola Pengajuan Klaim</h2>
+        <p className="text-muted">Tinjau dan proses klaim missing miles dari seluruh member</p>
       </div>
 
-      <div className="card shadow-sm border-0" style={{ borderRadius: "12px" }}>
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="text-muted small">
-                <tr>
-                  <th className="ps-4">No. Klaim</th>
-                  <th>Member</th>
-                  <th>Maskapai</th>
-                  <th>Rute</th>
-                  <th>Tanggal</th>
-                  <th>Flight</th>
-                  <th>Kelas</th>
-                  <th>Tanggal Pengajuan</th>
-                  <th>Status</th>
-                  <th className="pe-4">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="small">
-                {klaims.map((klaim) => (
-                  <tr key={klaim.id}>
-                    <td className="ps-4 fw-bold">CLM-{klaim.id.toString().padStart(3, '0')}</td>
+      <div className="table-container">
+        <div className="table-responsive">
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th className="px-4 py-3">Member</th>
+                <th className="py-3">Penerbangan</th>
+                <th className="py-3">Rute & Tanggal</th>
+                <th className="py-3">Bukti (PNR/Tiket)</th>
+                <th className="py-3">Status</th>
+                <th className="px-4 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {semuaKlaim.length > 0 ? (
+                semuaKlaim.map((klaim, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 fw-semibold text-primary">{klaim.email_member}</td>
+                    <td>{klaim.maskapai} <br/><small className="text-muted">{klaim.flight_number} - {klaim.kelas_kabin}</small></td>
+                    <td>{klaim.bandara_asal} &rarr; {klaim.bandara_tujuan} <br/><small className="text-muted">{new Date(klaim.tanggal_penerbangan).toLocaleDateString('id-ID')}</small></td>
+                    <td>{klaim.nomor_tiket} <br/><small className="text-muted">{klaim.pnr}</small></td>
                     <td>
-                      <div className="fw-bold text-dark">{klaim.member_nama}</div>
-                      <div className="text-muted" style={{ fontSize: "0.75rem" }}>{klaim.member_email}</div>
-                    </td>
-                    <td>{klaim.maskapai}</td>
-                    <td>{klaim.bandara_asal} → {klaim.bandara_tujuan}</td>
-                    <td>{klaim.tanggal_penerbangan}</td>
-                    <td>{klaim.flight_number}</td>
-                    <td>{klaim.kelas_kabin}</td>
-                    <td className="text-muted">{klaim.timestamp_pengajuan.substring(0, 19)}</td>
-                    <td>
-                      <span className={`badge rounded-pill ${klaim.status === 'Menunggu' ? 'bg-warning text-dark' : klaim.status === 'Disetujui' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: "0.7rem", padding: "4px 12px" }}>
-                        {klaim.status}
+                      <span className={`badge ${klaim.status_penerimaan === 'Disetujui' ? 'bg-success' : klaim.status_penerimaan === 'Ditolak' ? 'bg-danger' : 'bg-warning'}`}>
+                        {klaim.status_penerimaan}
                       </span>
                     </td>
-                    <td className="pe-4">
-                      {klaim.status === 'Menunggu' && (
-                        <div className="d-flex gap-2">
-                          <button 
-                            className="btn btn-sm btn-outline-success border-0" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#approveModal"
-                            onClick={() => setSelectedKlaim(klaim)}
-                          >
-                            <i className="bi bi-check-circle"></i>
+                    <td className="px-4 text-center">
+                      {klaim.status_penerimaan === 'Menunggu' ? (
+                        <>
+                          <button onClick={() => handleAction(klaim.id, 'Disetujui')} className="btn btn-sm btn-success btn-action me-2" title="Setujui">
+                            <i className="bi bi-check-lg"></i>
                           </button>
-                          <button 
-                            className="btn btn-sm btn-outline-danger border-0" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#rejectModal"
-                            onClick={() => setSelectedKlaim(klaim)}
-                          >
-                            <i className="bi bi-x-circle"></i>
+                          <button onClick={() => handleAction(klaim.id, 'Ditolak')} className="btn btn-sm btn-danger btn-action" title="Tolak">
+                            <i className="bi bi-x-lg"></i>
                           </button>
-                        </div>
+                        </>
+                      ) : (
+                        <small className="text-muted fst-italic">Diproses oleh<br/>{klaim.email_staf}</small>
                       )}
                     </td>
                   </tr>
-                ))}
-                {klaims.length === 0 && (
-                  <tr>
-                    <td colSpan={10} className="text-center py-5 text-muted">Belum ada klaim yang masuk.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Approve Modal */}
-      <div className="modal fade" id="approveModal" tabIndex={-1} aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content border-0 shadow" style={{ borderRadius: "12px" }}>
-            <div className="modal-header border-bottom-0">
-              <h5 className="modal-title fw-bold">Setujui Klaim</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body pb-0">
-              <p className="text-muted small">Miles akan ditambahkan ke akun member sesuai rute dan kelas kabin.</p>
-              <div className="bg-light p-3 rounded-3 mb-3 small">
-                <div className="mb-1"><strong>Klaim:</strong> CLM-{selectedKlaim?.id?.toString().padStart(3, '0')}</div>
-                <div className="mb-1"><strong>Member:</strong> {selectedKlaim?.member_nama}</div>
-                <div className="mb-1"><strong>Rute:</strong> {selectedKlaim?.bandara_asal} → {selectedKlaim?.bandara_tujuan}</div>
-                <div><strong>Kelas:</strong> {selectedKlaim?.kelas_kabin}</div>
-              </div>
-            </div>
-            <div className="modal-footer border-top-0 pt-0">
-              <button type="button" className="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-              <button type="button" className="btn btn-primary px-4" onClick={handleApprove} style={{ backgroundColor: "#1E3A8A" }}>Setujui</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Reject Modal */}
-      <div className="modal fade" id="rejectModal" tabIndex={-1} aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content border-0 shadow" style={{ borderRadius: "12px" }}>
-            <div className="modal-header border-bottom-0">
-              <h5 className="modal-title fw-bold">Tolak Klaim</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body pb-0">
-              <p className="text-muted small">Klaim akan ditolak dan member akan diinformasikan.</p>
-              <div className="bg-light p-3 rounded-3 mb-3 small">
-                <div className="mb-1"><strong>Klaim:</strong> CLM-{selectedKlaim?.id?.toString().padStart(3, '0')}</div>
-                <div className="mb-1"><strong>Member:</strong> {selectedKlaim?.member_nama}</div>
-                <div className="mb-1"><strong>Rute:</strong> {selectedKlaim?.bandara_asal} → {selectedKlaim?.bandara_tujuan}</div>
-              </div>
-            </div>
-            <div className="modal-footer border-top-0 pt-0">
-              <button type="button" className="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-              <button type="button" className="btn btn-danger px-4" onClick={handleReject}>Tolak</button>
-            </div>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-muted">Memuat data klaim...</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </>
