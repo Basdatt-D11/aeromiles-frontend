@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const result = await pool.query(`
       SELECT email, total_miles 
-      FROM MEMBER 
+      FROM member 
       ORDER BY total_miles DESC 
       LIMIT 5
     `);
