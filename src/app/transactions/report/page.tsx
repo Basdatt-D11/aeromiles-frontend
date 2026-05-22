@@ -3,90 +3,105 @@
 import { useEffect, useState } from "react";
 
 export default function LaporanTransaksi() {
-  const [report, setReport] = useState<any>(null);
-  const [top5Message, setTop5Message] = useState<string | null>(null); // State baru untuk nampung pesan Stored Procedure
+  const [activeTab, setActiveTab] = useState<'riwayat' | 'top'>('riwayat');
+  const [report, setReport] = useState<any>({ transactions: [], claim_stats: [], transfer_stats: { total_miles_transferred: 0 }, redeem_stats: [] });
+  const [topMembers, setTopMembers] = useState<any[]>([]);
+
+  const [top5Message, setTop5Message] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. Fetch data laporan statistik bawaan
-    fetch("/api/report")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setReport(data.data);
-      })
-      .catch((err) => console.error(err));
-
-    // 2. Fetch khusus untuk pesan Stored Procedure Top 5 Member
-    fetch("/api/report/top5")
-      .then((res) => res.json())
-      .then((data) => {
-        // Menangkap pesan yang berasal dari RAISE EXCEPTION database
-        if (data.success) setTop5Message(data.message);
-      })
-      .catch((err) => console.error(err));
+    // 1. Fetch data statistik (klaim/transfer)
+    fetch("/api/report").then(res => res.json()).then(data => {
+      if (data.success) setReport(data.data);
+    });
+    
+    // 2. Fetch data tabel Top Member (yang baru kita buat)
+    fetch("/api/report/top_members").then(res => res.json()).then(data => {
+      if (data.success) setTopMembers(data.data);
+    });
+    
+    // 3. Fetch pesan dari Dosen
+    fetch("/api/report/top5").then(res => res.json()).then(data => {
+      if (data.success) setTop5Message(data.message);
+    });
   }, []);
 
   return (
-    <>
-      <div className="mb-4">
-        <h2 className="fw-bold mb-1">Laporan Transaksi</h2>
-        <p className="text-muted">Ringkasan aktivitas dan transaksi sistem AeroMiles</p>
+    <div className="container-fluid p-4">
+      <h2 className="fw-bold mb-4">Laporan Transaksi</h2>
+
+      {/* HEADER STATISTIK (Ditaruh di luar Tab agar selalu muncul) */}
+      <div className="row g-4 mb-4">
+        <div className="col-md-4">
+          <div className="card p-4 shadow-sm border-0 border-start border-4 border-primary">
+            <h6 className="text-muted">Total Transfer Miles</h6>
+            <h3 className="fw-bold text-primary">{report.transfer_stats?.total_miles_transferred || 0}</h3>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card p-4 shadow-sm border-0 border-start border-4 border-success">
+            <h6 className="text-muted">Total Klaim</h6>
+            <h3 className="fw-bold text-success">{report.claim_stats?.length || 0} Status</h3>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card p-4 shadow-sm border-0 border-start border-4 border-warning">
+            <h6 className="text-muted">Total Data Redeem</h6>
+            <h3 className="fw-bold text-warning">{report.redeem_stats?.length || 0} Data</h3>
+          </div>
+        </div>
       </div>
 
-      {/* TAMPILAN PESAN DARI DATABASE (TUGAS MERAH) */}
-      {top5Message && (
-        <div className="alert alert-success shadow-sm mb-4 fw-medium border-0 border-start border-4 border-success" role="alert">
-          <i className="bi bi-info-circle-fill me-2"></i>
-          {top5Message}
-        </div>
-      )}
+      {/* TABS */}
+      <div className="d-flex gap-2 mb-4">
+        <button 
+          className={`btn ${activeTab === 'riwayat' ? 'btn-primary' : 'btn-outline-secondary'}`}
+          onClick={() => setActiveTab('riwayat')}>Riwayat Transaksi</button>
+        <button 
+          className={`btn ${activeTab === 'top' ? 'btn-primary' : 'btn-outline-secondary'}`}
+          onClick={() => setActiveTab('top')}>Top Member</button>
+      </div>
 
-      {report ? (
-        <div className="row g-4">
-          <div className="col-md-4">
-            <div className="card shadow-sm h-100 border-0 border-start border-4 border-primary">
-              <div className="card-body p-4">
-                <h6 className="text-muted mb-3">Status Klaim Miles</h6>
-                {report.claim_stats.map((c: any, idx: number) => (
-                  <div key={idx} className="d-flex justify-content-between mb-2">
-                    <span className="fw-medium">{c.status_penerimaan}</span>
-                    <span className="fw-bold text-primary">{c.total}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card shadow-sm h-100 border-0 border-start border-4 border-success">
-              <div className="card-body p-4">
-                <h6 className="text-muted mb-3">Total Transfer Miles</h6>
-                <h2 className="fw-bold text-success mb-0">
-                  {report.transfer_stats.total_miles_transferred || 0}
-                </h2>
-                <small className="text-muted">Miles telah ditransfer antar member</small>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card shadow-sm h-100 border-0 border-start border-4 border-warning">
-              <div className="card-body p-4">
-                <h6 className="text-muted mb-3">Statistik Redeem Hadiah</h6>
-                {report.redeem_stats.length > 0 ? (
-                  report.redeem_stats.map((r: any, idx: number) => (
-                    <div key={idx} className="d-flex justify-content-between mb-2">
-                      <span className="badge bg-warning text-dark">{r.kode_hadiah}</span>
-                      <span className="fw-bold">{r.total_redeem} kali</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted small">Belum ada data redeem.</p>
-                )}
-              </div>
-            </div>
-          </div>
+      {activeTab === 'riwayat' ? (
+        <div className="card shadow-sm border-0">
+          <table className="table align-middle mb-0">
+            <thead className="table-light text-muted small">
+              <tr>
+                <th className="px-4 py-3">Tipe</th><th>Email Member</th><th>Miles</th><th>Waktu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.transactions?.map((t: any, i: number) => (
+                <tr key={i}>
+                  <td className="px-4"><span className={`badge ${t.tipe === 'Klaim' ? 'bg-info' : 'bg-secondary'}`}>{t.tipe}</span></td>
+                  <td>{t.email}</td>
+                  <td className={`fw-bold ${t.miles > 0 ? 'text-success' : 'text-danger'}`}>{t.miles > 0 ? `+${t.miles}` : t.miles}</td>
+                  <td className="text-muted small">{new Date(t.waktu).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
-        <div className="text-center py-5 text-muted">Memuat data laporan...</div>
+        <div className="card shadow-sm border-0">
+          <table className="table align-middle mb-0">
+            <thead className="table-light text-muted small">
+              <tr>
+                <th className="px-4 py-3">Peringkat</th><th>Email Member</th><th>Total Miles</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topMembers.map((m, i) => (
+                <tr key={i}>
+                  <td className="px-4 fw-bold text-primary">{i + 1}</td>
+                  <td>{m.email}</td> {/* Pakai m.email karena kolomnya 'email' */}
+                  <td>{m.total_miles?.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-    </>
+    </div>
   );
 }

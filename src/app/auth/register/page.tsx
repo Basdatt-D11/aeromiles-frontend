@@ -77,7 +77,11 @@ export default function Register() {
                 </div>
                 <div className="col-md-3">
                   <label className="form-label text-muted fw-semibold small">Kode Negara</label>
-                  <input type="text" name="country_code" className="form-control" placeholder="+62" required />
+                  <select name="country_code" className="form-select" required>
+                    <option value="+62">+62</option>
+                    <option value="+65">+65</option>
+                    <option value="+60">+60</option>
+                  </select>
                 </div>
                 <div className="col-md-9">
                   <label className="form-label text-muted fw-semibold small">Nomor Telepon</label>
@@ -89,7 +93,10 @@ export default function Register() {
                 </div>
                 <div className="col-md-4">
                   <label className="form-label text-muted fw-semibold small">Kewarganegaraan</label>
-                  <input type="text" name="kewarganegaraan" className="form-control" required />
+                  <select name="kewarganegaraan" className="form-select" required>
+                    <option value="Indonesia">Indonesia</option>
+                    <option value="Singapore">Singapore</option>
+                  </select>
                 </div>
                 <div className="col-md-4">
                   <label className="form-label text-muted fw-semibold small">Mendaftar Sebagai</label>

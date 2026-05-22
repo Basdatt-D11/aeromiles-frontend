@@ -37,7 +37,7 @@ export default function Navbar() {
                   <span className="nav-text">Kelola Member</span>
                 </Link>
                 
-                <Link className={`nav-item-aero ${getActiveClass('/klaim')}`} href="/klaim">
+                <Link className={`nav-item-aero ${getActiveClass('/klaim')}`} href="/kelola_klaim">
                   <i className="bi bi-airplane-engines-fill"></i>
                   <span className="nav-text">Kelola Klaim</span>
                 </Link>

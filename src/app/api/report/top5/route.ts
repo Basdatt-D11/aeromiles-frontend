@@ -3,25 +3,15 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    // Menjalankan fungsi SQL yang melempar Exception
-    await pool.query('SELECT get_top_5_members_message()');
+    const result = await pool.query(`
+      SELECT email, total_miles 
+      FROM MEMBER 
+      ORDER BY total_miles DESC 
+      LIMIT 5
+    `);
     
-    // Kode ini secara teknis tidak akan pernah tercapai jika fungsi selalu melempar Exception
-    return NextResponse.json({ success: true, message: "Report generated" });
+    return NextResponse.json({ success: true, data: result.rows });
   } catch (error: any) {
-    // Mengecek apakah pesan error sebenarnya adalah pesan sukses dari dosen
-    if (error.message && error.message.includes("SUKSES:")) {
-      return NextResponse.json({ 
-        success: true, 
-        message: error.message.replace("ERROR: ", "") 
-      }, { status: 200 });
-    }
-
-    // Jika error asli/bukan pesan sukses custom
-    console.error("Database Error:", error);
-    return NextResponse.json({ 
-      success: false, 
-      message: error.message || "Terjadi kesalahan pada server" 
-    }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

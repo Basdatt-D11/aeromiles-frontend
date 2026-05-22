@@ -79,7 +79,7 @@ export default function KelolaMitra() {
     if (!selectedItem) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/mitra?email=${selectedItem.email_mitra}`, { method: "DELETE" });
+      const res = await fetch(`/api/mitra?email=${selectedItem.email}`, { method: "DELETE" });
       if (res.ok) {
         fetchMitra();
         setShowDeleteModal(false);
@@ -172,9 +172,9 @@ export default function KelolaMitra() {
                       <label className="form-label text-muted fw-semibold small">Email Mitra</label>
                       <input 
                         type="email" 
-                        name="email_mitra" 
+                        name="email" 
                         className={`form-control ${isEditing ? 'bg-light' : ''}`} 
-                        defaultValue={selectedItem?.email_mitra} 
+                        defaultValue={selectedItem?.email || selectedItem?.email}
                         readOnly={isEditing} 
                         placeholder="contoh: partner@traveloka.com"
                         required 
@@ -184,7 +184,7 @@ export default function KelolaMitra() {
 
                     <div className="col-md-12">
                       <label className="form-label text-muted fw-semibold small">Nama Mitra</label>
-                      <input type="text" name="nama_mitra" className="form-control" defaultValue={selectedItem?.nama_mitra} placeholder="Contoh: TravelokaPartner" required />
+                      <input type="text" name="nama" className="form-control" defaultValue={selectedItem?.nama || selectedItem?.nama} placeholder="Contoh: TravelokaPartner" required />
                     </div>
 
                     <div className="col-md-6">
@@ -222,7 +222,7 @@ export default function KelolaMitra() {
                   <i className="bi bi-building-x text-danger" style={{ fontSize: "4rem" }}></i>
                 </div>
                 <h4 className="fw-bold mb-3">Hapus Mitra?</h4>
-                <p className="text-muted px-2">Anda yakin ingin memutuskan kerja sama dan menghapus data <b>{selectedItem?.nama_mitra}</b> ({selectedItem?.email_mitra})?</p>
+                <p className="text-muted px-2">Anda yakin ingin memutuskan kerja sama dan menghapus data <b>{selectedItem?.nama}</b> ({selectedItem?.email})?</p>
                 <div className="d-flex gap-2 justify-content-center mt-4">
                   <button className="btn btn-light px-4 fw-semibold" onClick={() => setShowDeleteModal(false)} style={{ borderRadius: "8px" }}>Batal</button>
                   <button className="btn btn-danger px-4 fw-semibold" disabled={loading} onClick={executeDelete} style={{ borderRadius: "8px" }}>
