@@ -31,28 +31,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // ✅ Set ke false langsung, gak perlu cek storage
 
+  // ✅ useEffect untuk load dari storage DIHAPUS, biar dia selalu "lupa" pas refresh
   useEffect(() => {
-    const stored = window.localStorage.getItem("aeromiles_user");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as User;
-        setUser(parsed);
-      } catch {
-        window.localStorage.removeItem("aeromiles_user");
-      }
-    }
     setIsLoading(false);
   }, []);
 
   const login = (userData: User) => {
-    window.localStorage.setItem("aeromiles_user", JSON.stringify(userData));
+    // ✅ setItem DIHAPUS, biar dia gak nyimpen ke harddisk browser
     setUser(userData);
   };
 
   const logout = () => {
-    window.localStorage.removeItem("aeromiles_user");
+    // ✅ removeItem DIHAPUS
     setUser(null);
   };
 

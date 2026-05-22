@@ -99,10 +99,18 @@ export default function LaporanTransaksi() {
             <tbody>
               {report.transactions?.map((t: any, i: number) => (
                 <tr key={i}>
-                  <td className="px-4"><span className={`badge ${t.tipe === 'Klaim' ? 'bg-info' : 'bg-secondary'}`}>{t.tipe}</span></td>
+                  <td className="px-4">
+                    <span className={`badge ${t.tipe === 'Klaim' ? 'bg-info' : 'bg-secondary'}`}>
+                      {t.tipe}
+                    </span>
+                  </td>
                   <td>{t.email}</td>
-                  <td className={`fw-bold ${t.miles > 0 ? 'text-success' : 'text-danger'}`}>{t.miles > 0 ? `+${t.miles}` : t.miles}</td>
-                  <td className="text-muted small">{new Date(t.waktu).toLocaleString()}</td>
+                  <td className={`fw-bold ${t.miles > 0 ? 'text-success' : 'text-danger'}`}>
+                    {t.miles > 0 ? `+${t.miles}` : t.miles}
+                  </td>
+                  <td className="text-muted small">
+                    {new Date(t.waktu).toLocaleString('id-ID')}
+                  </td>
                   <td>
                     <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(t)}>
                       <i className="bi bi-trash"></i>
