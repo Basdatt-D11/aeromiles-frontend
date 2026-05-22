@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import MainLayoutWrapper from "@/components/MainLayoutWrapper";
-import Script from "next/script";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "AeroMiles",
-  description: "AeroMiles Dashboard",
+  description: "Frequent Flyer Program Management",
 };
 
 export default function RootLayout({
@@ -19,41 +20,19 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
-        <script src="https://cdn.tailwindcss.com" async></script>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            tailwind.config = {
-              corePlugins: {
-                preflight: false,
-              },
-              theme: {
-                extend: {
-                  fontFamily: { sans: ['Inter', 'sans-serif'] },
-                  colors: {
-                    brand: {
-                      dark: '#0F172A',
-                      primary: '#1E3A8A',
-                      primaryHover: '#172554',
-                      accent: '#60A5FA',
-                      iconBg: '#315891',
-                    }
-                  }
-                }
-              }
-            }
-          `
-        }}></script>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body>
+      <body style={{ backgroundColor: "#F4F5F7", fontFamily: "'Inter', sans-serif" }}>
         <AuthProvider>
-          <MainLayoutWrapper>
+          <Navbar />
+          {/* Main Content Wrapper */}
+          <main className="container py-4">
             {children}
-          </MainLayoutWrapper>
+          </main>
         </AuthProvider>
-        <Script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" strategy="lazyOnload" />
       </body>
     </html>
   );

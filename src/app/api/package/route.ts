@@ -5,7 +5,7 @@ export async function POST(req: Request) {
   try {
     const { email, id_package } = await req.json();
     await pool.query(
-      "INSERT INTO MEMBER_AWARD_MILES_PACKAGE (email_member, id_award_miles_package) VALUES ($1, $2)",
+      "INSERT INTO MEMBER_AWARD_MILES_PACKAGE (email_member, id_award_miles_package, timestamp) VALUES ($1, $2, NOW())",
       [email, id_package]
     );
     return NextResponse.json({ message: "Pembelian Berhasil!" });

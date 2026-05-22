@@ -1,113 +1,155 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function KelolaHadiah() {
-  const [hadiahList] = useState([
-    { kode: "RWD-001", nama: "Voucher Traveloka Rp 50.000", deskripsi: "Voucher diskon tiket pesawat atau hotel di Traveloka", penyedia: "TravelokaPartner", tipe_penyedia: "partner", miles: 5000, valid_start: "2024-01-01", program_end: "2024-12-31" },
-    { kode: "RWD-002", nama: "Tiket Garuda PP Jakarta - Bali", deskripsi: "Kelas Ekonomi PP", penyedia: "Garuda Indonesia", tipe_penyedia: "airline", miles: 25000, valid_start: "2024-02-01", program_end: "2024-11-30" },
-  ]);
+  const [hadiah, setHadiah] = useState<any[]>([]);
+  
+  // State untuk ngatur Modal Form (Tambah/Edit) dan Modal Delete
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [selectedHadiah, setSelectedHadiah] = useState<any>(null);
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Data hadiah disimpan (demo)");
-    const modalEl = document.getElementById("addModal");
-    if (modalEl) {
-      // @ts-ignore
-      const modal = window.bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
+  const fetchHadiah = async () => {
+    try {
+      const res = await fetch("/api/hadiah");
+      const data = await res.json();
+      if (data.success) setHadiah(data.data);
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchHadiah();
+  }, []);
+
+  // --- TRIGGER MODAL ---
+  const openAddModal = () => {
+    setSelectedItem(null);
+    setIsEditing(false);
+    setShowFormModal(true);
+  };
+
+  const openEditModal = (item: any) => {
+    setSelectedItem(item);
+    setIsEditing(true);
+    setShowFormModal(true);
+  };
+
+  const openDeleteModal = (item: any) => {
+    setSelectedItem(item);
+    setShowDeleteModal(true);
+  };
+
+  // --- HANDLER ACTIONS ---
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert("Data hadiah diperbarui (demo)");
-    const modalEl = document.getElementById("editModal");
-    if (modalEl) {
-      // @ts-ignore
-      const modal = window.bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      // Kalau edit pake PUT, kalau nambah pake POST
+      const method = isEditing ? "PUT" : "POST";
+      const res = await fetch("/api/hadiah", {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        fetchHadiah();
+        setShowFormModal(false);
+      } else {
+        alert(data.message || "Gagal menyimpan data.");
+      }
+    } catch (error) {
+      alert("Terjadi kesalahan sistem.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = () => {
-    alert("Data hadiah dihapus (demo)");
-    const modalEl = document.getElementById("deleteModal");
-    if (modalEl) {
-      // @ts-ignore
-      const modal = window.bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
+  const executeDelete = async () => {
+    if (!selectedItem) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/hadiah?kode=${selectedItem.kode_hadiah}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchHadiah();
+        setShowDeleteModal(false);
+      } else {
+        alert("Gagal menghapus data.");
+      }
+    } catch (error) {
+      alert("Terjadi kesalahan sistem.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Helper biar tanggal ISO dari database bisa dipasang di <input type="date">
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return "";
+    return dateString.split('T')[0];
   };
 
   return (
-    <>
-      <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
-        <h3 className="fw-bold m-0">Kelola Hadiah & Penyedia</h3>
-        <button className="btn btn-primary" style={{ backgroundColor: "#1E3A8A", borderColor: "#1E3A8A", borderRadius: "8px" }} data-bs-toggle="modal" data-bs-target="#addModal">
-          <i className="bi bi-plus"></i> Tambah Hadiah
-        </button>
-      </div>
-
-      {/* Main Card for Table */}
-      <div className="card shadow-sm border-0 mb-5" style={{ borderRadius: "12px" }}>
+    <div className="container-fluid p-4" style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}>
+      
+      <div className="card shadow-sm border-0" style={{ borderRadius: "16px" }}>
+        <div className="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center" style={{ borderRadius: "16px 16px 0 0" }}>
+          <h4 className="fw-bold mb-0">Kelola Hadiah & Penyedia</h4>
+          <button onClick={openAddModal} className="btn btn-primary fw-semibold px-4" style={{ backgroundColor: "#0A2463", borderRadius: "8px" }}>
+            <i className="bi bi-plus-lg me-2"></i> Tambah Hadiah
+          </button>
+        </div>
+        
         <div className="card-body p-0">
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
-              <thead className="bg-light text-muted small text-uppercase">
+              <thead className="bg-light">
                 <tr>
-                  <th className="ps-4 py-3 fw-semibold border-bottom-0">Kode</th>
-                  <th className="py-3 fw-semibold border-bottom-0">Nama</th>
-                  <th className="py-3 fw-semibold border-bottom-0">Deskripsi</th>
-                  <th className="py-3 fw-semibold border-bottom-0">Penyedia</th>
-                  <th className="py-3 fw-semibold border-bottom-0">Miles</th>
-                  <th className="py-3 fw-semibold border-bottom-0">Periode</th>
-                  <th className="pe-4 py-3 fw-semibold border-bottom-0 text-center">Aksi</th>
+                  <th className="text-muted fw-semibold py-3 px-4">Kode</th>
+                  <th className="text-muted fw-semibold py-3">Nama</th>
+                  <th className="text-muted fw-semibold py-3">Deskripsi</th>
+                  <th className="text-muted fw-semibold py-3">ID Penyedia</th>
+                  <th className="text-muted fw-semibold py-3">Miles</th>
+                  <th className="text-muted fw-semibold py-3">Periode</th>
+                  <th className="text-muted fw-semibold py-3 px-4 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="border-top-0">
-                {hadiahList.map((h) => (
-                  <tr key={h.kode}>
-                    <td className="ps-4 fw-bold text-dark">{h.kode}</td>
-                    <td className="fw-semibold text-dark">{h.nama}</td>
-                    <td className="text-muted small text-truncate" style={{ maxWidth: "200px" }}>{h.deskripsi}</td>
+              <tbody>
+                {hadiah.length > 0 ? hadiah.map((h, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 fw-bold">{h.kode || h.id}</td>     
+                    <td className="fw-medium">{h.nama}</td>
+                    <td><span className="d-inline-block text-truncate" style={{ maxWidth: "150px" }}>{h.deskripsi}</span></td>
                     <td>
-                      <div className="d-flex align-items-center gap-2">
-                        <span className="fw-semibold text-dark">{h.penyedia}</span>
-                        <span className="badge rounded-pill border text-dark fw-normal bg-light">{h.tipe_penyedia}</span>
-                      </div>
+                      <span className="badge bg-light text-dark border px-2 py-1">{h.id_penyedia}</span>
                     </td>
-                    <td className="fw-bold text-dark">{h.miles}</td>
-                    <td className="text-muted small">
-                      <span>{h.valid_start}</span> &mdash; <span>{h.program_end}</span>
+                    <td className="fw-bold text-success">{h.miles?.toLocaleString()}</td>
+                    <td className="small text-muted">
+                      {formatDateForInput(h.valid_start_date)} s/d <br/> {formatDateForInput(h.program_end)}
                     </td>
-                    <td className="pe-4 text-center">
-                      <button 
-                        className="btn btn-sm btn-link text-secondary p-1" 
-                        title="Edit"
-                        data-bs-toggle="modal" 
-                        data-bs-target="#editModal"
-                        onClick={() => setSelectedHadiah(h)}
-                      >
-                        <i className="bi bi-pencil"></i>
+                    <td className="px-4 text-center">
+                      <button onClick={() => openEditModal(h)} className="btn btn-sm btn-light me-2 text-primary">
+                        <i className="bi bi-pencil-fill"></i>
                       </button>
-                      <button 
-                        className="btn btn-sm btn-link text-danger p-1" 
-                        title="Hapus"
-                        data-bs-toggle="modal" 
-                        data-bs-target="#deleteModal"
-                        onClick={() => setSelectedHadiah(h)}
-                      >
-                        <i className="bi bi-trash"></i>
+                      <button onClick={() => openDeleteModal(h)} className="btn btn-sm btn-light text-danger">
+                        <i className="bi bi-trash3-fill"></i>
                       </button>
                     </td>
                   </tr>
-                ))}
-                {hadiahList.length === 0 && (
+                )) : (
                   <tr>
-                    <td colSpan={7} className="text-center py-5 text-muted">Belum ada data hadiah.</td>
+                    <td colSpan={7} className="text-center py-4 text-muted">Belum ada data hadiah.</td>
                   </tr>
                 )}
               </tbody>
@@ -116,126 +158,100 @@ export default function KelolaHadiah() {
         </div>
       </div>
 
-      {/* Modal Tambah Hadiah */}
-      <div className="modal fade" id="addModal" tabIndex={-1} aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content border-0 shadow" style={{ borderRadius: "12px" }}>
-            <div className="modal-header border-bottom-0 pb-0">
-              <h5 className="modal-title fw-bold">Tambah Hadiah Baru</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={handleSave}>
-                <div className="row g-3">
-                  <div className="col-12">
-                    <label className="form-label fw-semibold small">Nama Hadiah</label>
-                    <input type="text" className="form-control" required />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold small">Penyedia</label>
-                    <select className="form-select" required>
-                      <option value="">Pilih penyedia</option>
-                      <option value="Garuda Indonesia|airline">Garuda Indonesia (airline)</option>
-                      <option value="TravelokaPartner|partner">TravelokaPartner (partner)</option>
-                      <option value="Plaza Premium|partner">Plaza Premium (partner)</option>
-                    </select>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold small">Miles Dibutuhkan</label>
-                    <input type="number" className="form-control" required min="1" />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label fw-semibold small">Deskripsi</label>
-                    <textarea className="form-control" rows={3} required></textarea>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold small">Valid Start</label>
-                    <input type="date" className="form-control" required />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold small">Program End</label>
-                    <input type="date" className="form-control" required />
-                  </div>
-                </div>
-                <div className="d-flex justify-content-end mt-4">
-                  <button type="submit" className="btn btn-primary" style={{ backgroundColor: "#1E3A8A", borderColor: "#1E3A8A", borderRadius: "8px" }}>Simpan</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal Edit Hadiah */}
-      <div className="modal fade" id="editModal" tabIndex={-1} aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content border-0 shadow" style={{ borderRadius: "12px" }}>
-            <div className="modal-header border-bottom-0 pb-0">
-              <h5 className="modal-title fw-bold">Edit Hadiah</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {selectedHadiah && (
-                <form onSubmit={handleEdit}>
+      {/* MODAL FORM (TAMBAH & EDIT) */}
+      {showFormModal && (
+        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)" }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content border-0 shadow-lg p-2" style={{ borderRadius: "16px" }}>
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">{isEditing ? "Edit Data Hadiah" : "Tambah Hadiah Baru"}</h5>
+                <button type="button" className="btn-close" onClick={() => setShowFormModal(false)}></button>
+              </div>
+              <div className="modal-body p-4">
+                <form onSubmit={handleSave}>
                   <div className="row g-3">
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold small">Kode Hadiah</label>
-                      <input type="text" className="form-control bg-light" defaultValue={selectedHadiah.kode} disabled />
+                    
+                    {/* Kode Hadiah (Read-only saat Edit karena PK) */}
+                    <div className="col-md-12 mb-2">
+                      <label className="form-label text-muted fw-semibold small">Kode Hadiah</label>
+                      <input 
+                        type="text" 
+                        name="kode_hadiah" 
+                        className={`form-control ${isEditing ? 'bg-light' : ''}`} 
+                        defaultValue={selectedItem?.kode_hadiah} 
+                        readOnly={isEditing} 
+                        placeholder="Contoh: RWD-001"
+                        required 
+                      />
+                      {isEditing && <small className="text-danger" style={{fontSize: "0.75rem"}}>*Kode hadiah tidak dapat diubah</small>}
                     </div>
-                    <div className="col-md-8">
-                      <label className="form-label fw-semibold small">Nama Hadiah</label>
-                      <input type="text" className="form-control" defaultValue={selectedHadiah.nama} required />
+
+                    <div className="col-md-12">
+                      <label className="form-label text-muted fw-semibold small">Nama Hadiah</label>
+                      <input type="text" name="nama" className="form-control" defaultValue={selectedItem?.nama} required />
                     </div>
+
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">Penyedia</label>
-                      <select className="form-select" defaultValue={`${selectedHadiah.penyedia}|${selectedHadiah.tipe_penyedia}`} required>
-                        <option value="Garuda Indonesia|airline">Garuda Indonesia (airline)</option>
-                        <option value="TravelokaPartner|partner">TravelokaPartner (partner)</option>
-                        <option value="Plaza Premium|partner">Plaza Premium (partner)</option>
-                      </select>
+                      <label className="form-label text-muted fw-semibold small">ID Penyedia</label>
+                      <input type="number" name="id_penyedia" className="form-control" defaultValue={selectedItem?.id_penyedia} required />
                     </div>
+                    
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">Miles Dibutuhkan</label>
-                      <input type="number" className="form-control" defaultValue={selectedHadiah.miles} required min="1" />
+                      <label className="form-label text-muted fw-semibold small">Miles Dibutuhkan</label>
+                      <input type="number" name="miles" className="form-control" defaultValue={selectedItem?.miles} required />
                     </div>
-                    <div className="col-12">
-                      <label className="form-label fw-semibold small">Deskripsi</label>
-                      <textarea className="form-control" rows={3} defaultValue={selectedHadiah.deskripsi} required></textarea>
+
+                    <div className="col-md-12">
+                      <label className="form-label text-muted fw-semibold small">Deskripsi</label>
+                      <textarea name="deskripsi" className="form-control" rows={3} defaultValue={selectedItem?.deskripsi} required></textarea>
                     </div>
+
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">Valid Start</label>
-                      <input type="date" className="form-control" defaultValue={selectedHadiah.valid_start} required />
+                      <label className="form-label text-muted fw-semibold small">Valid Start</label>
+                      <input type="date" name="valid_start_date" className="form-control" defaultValue={formatDateForInput(selectedItem?.valid_start_date)} required />
                     </div>
+
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">Program End</label>
-                      <input type="date" className="form-control" defaultValue={selectedHadiah.program_end} required />
+                      <label className="form-label text-muted fw-semibold small">Program End</label>
+                      <input type="date" name="program_end" className="form-control" defaultValue={formatDateForInput(selectedItem?.program_end)} required />
                     </div>
-                  </div>
-                  <div className="d-flex justify-content-end mt-4">
-                    <button type="submit" className="btn btn-primary" style={{ backgroundColor: "#1E3A8A", borderColor: "#1E3A8A", borderRadius: "8px" }}>Simpan</button>
+
+                    <div className="col-12 text-end mt-4">
+                      <button type="submit" className="btn btn-primary px-5 fw-bold" disabled={loading} style={{ backgroundColor: "#0A2463", borderRadius: "8px" }}>
+                        {loading ? "Menyimpan..." : "Simpan"}
+                      </button>
+                    </div>
+
                   </div>
                 </form>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal Hapus Hadiah */}
-      <div className="modal fade" id="deleteModal" tabIndex={-1} aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content border-0 shadow" style={{ borderRadius: "12px" }}>
-            <div className="modal-body p-4 text-center">
-              <h5 className="fw-bold mb-3 text-start">Hapus Hadiah?</h5>
-              <p className="text-muted small text-start mb-4">Jika hadiah sudah pernah di-redeem oleh Member, riwayat redeem akan terpengaruh.</p>
-              <div className="d-flex justify-content-end gap-2">
-                <button type="button" className="btn btn-light border fw-semibold" data-bs-dismiss="modal">Batal</button>
-                <button type="button" onClick={handleDelete} className="btn btn-primary" style={{ backgroundColor: "#1E3A8A", borderColor: "#1E3A8A" }}>Hapus</button>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS */}
+      {showDeleteModal && (
+        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg p-2" style={{ borderRadius: "16px" }}>
+              <div className="modal-body text-center p-4">
+                <div className="mb-4 d-flex justify-content-center">
+                  <i className="bi bi-exclamation-triangle-fill text-danger" style={{ fontSize: "4rem" }}></i>
+                </div>
+                <h4 className="fw-bold mb-3">Hapus Hadiah?</h4>
+                <p className="text-muted px-2">Anda yakin ingin menghapus <b>{selectedItem?.nama}</b> ({selectedItem?.kode_hadiah}) secara permanen? Data yang dihapus tidak dapat dikembalikan.</p>
+                <div className="d-flex gap-2 justify-content-center mt-4">
+                  <button className="btn btn-light px-4 fw-semibold" onClick={() => setShowDeleteModal(false)} style={{ borderRadius: "8px" }}>Batal</button>
+                  <button className="btn btn-danger px-4 fw-semibold" disabled={loading} onClick={executeDelete} style={{ borderRadius: "8px" }}>
+                    {loading ? "Menghapus..." : "Ya, Hapus!"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

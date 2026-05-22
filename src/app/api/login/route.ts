@@ -14,17 +14,20 @@ export async function POST(req: Request) {
 
     const result = await pool.query(
     `SELECT p.*, 
+      m.nomor_member, m.tanggal_bergabung,
+      s.id_staf, s.kode_maskapai,
       CASE 
         WHEN m.email IS NOT NULL THEN 'MEMBER'
         WHEN s.email IS NOT NULL THEN 'STAFF'
         ELSE 'GUEST'
       END as role,
-      p.first_mid_name || ' ' || p.last_name as nama -- Biar field 'nama' di context keisi
+      p.first_mid_name || ' ' || p.last_name as nama,
+      (p.password = crypt($2, p.password)) as is_password_valid
     FROM pengguna p
     LEFT JOIN member m ON p.email = m.email
     LEFT JOIN staf s ON p.email = s.email
     WHERE p.email = $1`,
-    [email]
+    [email, password]
   );
 
     if (result.rows.length === 0) {
@@ -35,16 +38,16 @@ export async function POST(req: Request) {
     }
 
     const user = result.rows[0];
-    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordValid) {
+    if (!user.is_password_valid) {
       return Response.json({ 
         success: false, 
-        message: "Password salah cuy!" 
+        message: "Password anda salah!" 
       }, { status: 401 });
     }
 
     delete user.password;
+    delete user.is_password_valid;
 
     return Response.json({
       success: true,

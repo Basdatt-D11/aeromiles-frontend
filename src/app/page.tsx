@@ -1,111 +1,107 @@
 "use client";
-
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    const fetchMemberStats = async () => {
-      if (user?.email && user.role === "MEMBER") {
-        try {
-          const res = await fetch(`/api/member/stats?email=${user.email}`);
-          const data = await res.json();
-          setStats(data);
-        } catch (error) {
-          console.error("Gagal ambil stats:", error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
-    };
-
-    fetchMemberStats();
-  }, [user]);
-
-  if (!user) {
-    return (
-      <div className="alert alert-info">
-        Silakan <a href="/auth/login" className="alert-link">login</a> terlebih dahulu.
-      </div>
-    );
-  }
+    if (user?.email) {
+      fetch(`/api/dashboard?email=${user.email}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) setData(res);
+        });
+    }
+  }, [user?.email]);
 
   return (
-    <>
-      <div className="mb-4 d-flex justify-content-between align-items-center">
-        <div>
-          <h2 className="fw-bold">Dashboard</h2>
-          <p className="text-muted">
-            Selamat datang, <span className="text-primary fw-semibold">{user.nama}</span>
-          </p>
-        </div>
-        <button onClick={logout} className="btn btn-outline-danger btn-sm">
-          <i className="bi bi-box-arrow-right me-1"></i> Logout
-        </button>
-      </div>
-
-      <div className="card shadow-sm mb-4 border-0">
-        <div className="card-body p-4">
-          <h5 className="fw-bold mb-3">Informasi Pribadi</h5>
-          <div className="row g-4">
-            <div className="col-md-3">
-              <small className="text-muted d-block">Nama Lengkap:</small>
-              <span className="fw-semibold">{user.nama}</span>
-            </div>
-            <div className="col-md-3">
-              <small className="text-muted d-block">Email:</small>
-              <span className="fw-semibold">{user.email}</span>
-            </div>
-            <div className="col-md-3">
-              <small className="text-muted d-block">Role:</small>
-              <span className="fw-semibold">{user.role}</span>
-            </div>
-            <div className="col-md-3">
-              <small className="text-muted d-block">Telepon:</small>
-              <span className="fw-semibold">+62 812-XXXX-XXXX</span>
-            </div>
+    <div className="container-fluid p-4" style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}>
+      <h2 className="fw-bold mb-1">Dashboard</h2>
+      <p className="text-muted mb-4">Selamat datang, <span className="fw-semibold text-primary">{user?.first_mid_name} {user?.last_name}</span></p>
+      
+      {/* Kartu Informasi Pribadi */}
+      <div className="card shadow-sm border-0 p-4 mb-4" style={{borderRadius: '12px', backgroundColor: '#F3F4F6'}}>
+        <h5 className="fw-bold mb-3">Informasi Pribadi</h5>
+        <div className="row g-3">
+          <div className="col-md-4">
+            <small className="text-muted d-block">Nama Lengkap:</small>
+            <span className="fw-semibold">{data?.user?.first_mid_name} {data?.user?.last_name}</span>
+          </div>
+          <div className="col-md-4">
+            <small className="text-muted d-block">Email:</small>
+            <span className="fw-semibold">{user?.email}</span>
+          </div>
+          <div className="col-md-4">
+            <small className="text-muted d-block">Telepon:</small>
+            <span className="fw-semibold">{data?.user?.country_code} {data?.user?.mobile_number}</span>
+          </div>
+          <div className="col-md-4 mt-3">
+            <small className="text-muted d-block">Kewarganegaraan:</small>
+            <span className="fw-semibold">{data?.user?.kewarganegaraan || 'Indonesia'}</span>
+          </div>
+          <div className="col-md-4 mt-3">
+            <small className="text-muted d-block">Tanggal Lahir:</small>
+            <span className="fw-semibold">{data?.user?.tanggal_lahir ? new Date(data.user.tanggal_lahir).toLocaleDateString('id-ID') : '-'}</span>
+          </div>
+          <div className="col-md-4 mt-3">
+            <small className="text-muted d-block">Tanggal Bergabung:</small>
+            <span className="fw-semibold">{data?.user?.tanggal_bergabung ? new Date(data.user.tanggal_bergabung).toLocaleDateString('id-ID') : '-'}</span>
           </div>
         </div>
       </div>
 
+      {/* 4 Kotak Stat */}
       <div className="row g-3 mb-4">
-        {user.role === "MEMBER" ? (
-          <>
-            <div className="col-md-3">
-              <div className="card shadow-sm p-3 border-start border-4 border-primary border-0 h-100">
-                <small className="text-muted">Nomor Member</small>
-                <h4 className="fw-bold m-0">{loading ? "..." : (stats?.no_member || "N/A")}</h4>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card shadow-sm p-3 border-start border-4 border-warning border-0 h-100">
-                <small className="text-muted">Tier</small>
-                <h4 className="fw-bold m-0 text-warning">{loading ? "..." : (stats?.tier || "Blue")}</h4>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card shadow-sm p-3 border-start border-4 border-info border-0 h-100">
-                <small className="text-muted">Award Miles</small>
-                <h4 className="fw-bold m-0">{loading ? "..." : (stats?.award_miles || "0")}</h4>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card shadow-sm p-3 border-start border-4 border-success border-0 h-100">
-                <small className="text-muted">Total Miles</small>
-                <h4 className="fw-bold m-0">{loading ? "..." : (stats?.total_miles || "0")}</h4>
-              </div>
-            </div>
-          </>
+        <div className="col-md-3">
+          <div className="card shadow-sm border-0 p-3 h-100" style={{borderRadius: '12px'}}>
+            <small className="text-muted">Nomor Member</small>
+            <h4 className="fw-bold mb-0 mt-1">{data?.user?.nomor_member || '-'}</h4>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card shadow-sm border-0 p-3 h-100" style={{borderRadius: '12px', backgroundColor: '#FEF9C3'}}>
+            <small className="text-muted">Tier Status</small>
+            <h4 className="fw-bold text-warning mb-0 mt-1">{data?.user?.nama_tier || 'Blue'}</h4>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card shadow-sm border-0 p-3 h-100" style={{borderRadius: '12px'}}>
+            <small className="text-muted">Total Miles</small>
+            <h4 className="fw-bold text-primary mb-0 mt-1">{data?.user?.total_miles?.toLocaleString('id-ID') || 0}</h4>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card shadow-sm border-0 p-3 h-100" style={{borderRadius: '12px', backgroundColor: '#DCFCE7'}}>
+            <small className="text-muted">Award Miles</small>
+            <h4 className="fw-bold text-success mb-0 mt-1">{data?.user?.award_miles?.toLocaleString('id-ID') || 0}</h4>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabel 5 Transaksi Terakhir */}
+      <div className="card shadow-sm border-0 p-4" style={{borderRadius: '12px'}}>
+        <h5 className="fw-bold mb-4">5 Transaksi Terbaru</h5>
+        {data?.transactions && data.transactions.length > 0 ? (
+          <table className="table table-borderless">
+            <tbody>
+              {data.transactions.map((t: any, i: number) => (
+                <tr key={i} className="border-bottom">
+                  <td className="py-3"><span className="badge bg-light text-dark border">{t.tipe}</span></td>
+                  <td className="py-3 text-muted">{new Date(t.waktu).toLocaleString('id-ID')}</td>
+                  <td className="py-3 fw-semibold">{t.catatan}</td>
+                  <td className={`py-3 text-end fw-bold ${t.miles < 0 ? 'text-danger' : 'text-success'}`}>
+                    {t.miles > 0 ? '+' : ''}{t.miles.toLocaleString('id-ID')} miles
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <div className="col-12 text-muted">Halaman khusus Staf</div>
+          <p className="text-muted text-center py-3">Belum ada transaksi.</p>
         )}
       </div>
-    </>
+    </div>
   );
 }

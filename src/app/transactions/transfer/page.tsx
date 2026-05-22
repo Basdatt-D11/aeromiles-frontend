@@ -1,288 +1,152 @@
 "use client";
-
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 
 export default function TransferMiles() {
   const { user } = useAuth();
-  const [awardMiles, setAwardMiles] = useState<number | null>(null);
   const [history, setHistory] = useState<any[]>([]);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableMiles, setAvailableMiles] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const fetchHistory = async () => {
-    if (!user?.email) {
-      setHistory([]);
-      return;
-    }
+  const [formData, setFormData] = useState({
+    to_email: "",
+    amount: 0,
+    catatan: ""
+  });
 
+  const fetchData = async () => {
+    if (!user?.email) return;
     try {
-      const response = await fetch(`/api/transfer?email=${encodeURIComponent(user.email)}`);
-      const data = await response.json();
+      // Ambil saldo terbaru
+      const resMember = await fetch(`/api/dashboard?email=${user.email}`);
+      const jsonMember = await resMember.json();
+      if (jsonMember.success) setAvailableMiles(jsonMember.user.award_miles);
 
-      if (data.success && Array.isArray(data.history)) {
-        const formattedHistory = data.history.map((item: any) => {
-          const type = item.transfer_type ?? (item.email_member_1?.toLowerCase() === user.email.toLowerCase() ? "Kirim" : "Terima");
-          const otherEmail = type === "Kirim" ? item.email_member_2 : item.email_member_1;
-          const timestamp = item.created_at ?? item.timestamp ?? item.createdAt ?? new Date().toISOString();
-
-          return {
-            timestamp,
-            member_name: otherEmail,
-            member_email: otherEmail,
-            miles: Number(item.jumlah ?? 0),
-            note: item.catatan ?? item.note ?? "-",
-            type
-          };
-        });
-
-        setHistory(formattedHistory);
-      } else {
-        setHistory([]);
-      }
-    } catch (err) {
-      console.error(err);
-      setHistory([]);
-    }
+      // Ambil history transfer
+      const resHistory = await fetch(`/api/transactions/transfer?email=${user.email}`);
+      const jsonHistory = await resHistory.json();
+      if (jsonHistory.success) setHistory(jsonHistory.data);
+    } catch (e) { console.error(e); }
   };
 
-  useEffect(() => {
-    async function fetchMemberData() {
-      if (!user?.email) {
-        setAwardMiles(null);
-        setHistory([]);
-        return;
-      }
+  useEffect(() => { fetchData(); }, [user?.email]);
 
-      try {
-        const memberResponse = await fetch(`/api/member?email=${encodeURIComponent(user.email)}`);
-        const memberData = await memberResponse.json();
-        if (memberData.success && memberData.member?.award_miles != null) {
-          setAwardMiles(Number(memberData.member.award_miles));
-        } else {
-          setAwardMiles(null);
-        }
-      } catch (err) {
-        console.error(err);
-        setAwardMiles(null);
-      }
-
-      await fetchHistory();
-    }
-
-    fetchMemberData();
-  }, [user]);
-
-  if (!user) {
-    return (
-      <div className="p-6 bg-white rounded-xl shadow-sm">
-        <h4 className="fw-bold">Transfer Miles</h4>
-        <p className="text-muted">Silakan login untuk melakukan transfer miles.</p>
-      </div>
-    );
-  }
-
-  const handleTransfer = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!user?.email) {
-      setError("Anda harus login untuk melakukan transfer miles.");
-      return;
-    }
-
-    const formData = new FormData(e.currentTarget);
-    const recipientEmail = formData.get("recipient_email")?.toString().trim() || "";
-    const amountValue = formData.get("amount")?.toString() || "";
-    const note = formData.get("note")?.toString() || "";
-    const jumlah = Number(amountValue);
-
-    if (!recipientEmail) {
-      setError("Email penerima harus diisi.");
-      return;
-    }
-    if (!jumlah || jumlah <= 0) {
-      setError("Jumlah miles harus lebih besar dari 0.");
-      return;
-    }
-    if (jumlah < 100) {
-      setError("Jumlah transfer minimal 100 miles.");
-      return;
-    }
-    if (user.role && user.role.toLowerCase() !== "member") {
-      setError("Hanya member yang dapat melakukan transfer miles.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    setLoading(true);
     try {
-      const response = await fetch("/api/transfer", {
+      const res = await fetch("/api/transactions/transfer", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email_member_1: user.email,
-          email_member_2: recipientEmail,
-          jumlah,
-          catatan: note || "-"
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, from_email: user?.email }),
       });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        setError(data.message || "Terjadi error saat transfer.");
-        setIsSubmitting(false);
-        return;
+      const json = await res.json();
+      if (json.success) {
+        setShowModal(false);
+        fetchData();
+        alert("Transfer Berhasil!");
+      } else {
+        alert(json.message);
       }
-
-      setSuccess(data.message || `SUKSES: Transfer ${jumlah} miles berhasil dicatat.`);
-      setAwardMiles(prev => (prev !== null ? prev - jumlah : prev));
-      await fetchHistory();
-      setIsSubmitting(false);
-
-      const modalEl = document.getElementById("transferModal");
-      if (modalEl) {
-        // @ts-ignore
-        const modal = window.bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Terjadi error saat transfer. Silakan coba lagi.");
-      setIsSubmitting(false);
-    }
+    } catch (e) { console.error(e); }
+    setLoading(false);
   };
-
-  const isNonMember = user?.role && user.role.toLowerCase() !== "member";
 
   return (
-    <>
+    <div className="container-fluid p-4" style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}>
+      
+      {/* Header (Gambar 1 - image_f9f5c3) */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="fw-bold m-0">Transfer Miles</h4>
-          <p className="text-muted small m-0">Award Miles tersedia: <span className="fw-bold">{awardMiles !== null ? awardMiles.toLocaleString("id-ID") : "Sedang dimuat..."}</span></p>
-          {isNonMember && (
-            <div className="alert alert-warning mt-3 py-2 mb-0 small">
-              Fitur transfer hanya tersedia untuk member. Mohon gunakan akun member untuk melakukan transfer.
-            </div>
-          )}
+          <h2 className="fw-bold mb-1">Transfer Miles</h2>
+          <p className="text-muted mb-0">Award Miles tersedia: <span className="fw-bold text-primary">{availableMiles.toLocaleString('id-ID')}</span></p>
         </div>
-        <div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#transferModal"
-            style={{ backgroundColor: "#1E3A8A", borderRadius: "8px" }}
-            disabled={isNonMember}
-            title={isNonMember ? "Hanya member yang dapat melakukan transfer" : "Transfer baru"}
-          >
-            <i className="bi bi-plus-lg me-2"></i>Transfer Baru
-          </button>
-        </div>
+        <button className="btn btn-primary fw-semibold shadow-sm" style={{ backgroundColor: "#0A2463", borderRadius: "8px" }} onClick={() => setShowModal(true)}>
+          + Transfer Baru
+        </button>
       </div>
 
-      {success && (
-        <div className="alert alert-success mb-4" role="alert">
-          {success}
-        </div>
-      )}
-      <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: "12px" }}>
+      {/* Tabel Riwayat (Gambar 1 - image_f9f5c3) */}
+      <div className="card shadow-sm border-0" style={{ borderRadius: "12px", height: "fit-content" }}>
         <div className="card-body p-4">
           <h5 className="fw-bold mb-4">Riwayat Transfer</h5>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="text-muted small">
-                <tr>
-                  <th className="fw-normal">Waktu</th>
-                  <th className="fw-normal">Member</th>
-                  <th className="fw-normal">Jumlah Miles</th>
-                  <th className="fw-normal">Catatan</th>
-                  <th className="fw-normal">Tipe</th>
-                  <th className="fw-normal">Aksi</th>
+          <table className="table table-hover mb-0">
+            <thead className="bg-light text-muted small">
+              <tr>
+                <th className="py-3 border-0">Waktu</th>
+                <th className="py-3 border-0">Member</th>
+                <th className="py-3 border-0 text-center">Jumlah Miles</th>
+                <th className="py-3 border-0">Catatan</th>
+                <th className="py-3 border-0 text-center">Tipe</th>
+                <th className="py-3 border-0 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((t, i) => (
+                <tr key={i} className="align-middle border-bottom">
+                  <td className="py-3 text-muted">
+                    {new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </td>
+                  <td className="py-3">
+                    <div className="fw-bold">{t.first_mid_name} {t.last_name}</div>
+                    <div className="small text-muted">{t.other_email}</div>
+                  </td>
+                  <td className={`py-3 text-center fw-bold ${t.tipe === 'Kirim' ? 'text-danger' : 'text-success'}`}>
+                    {t.tipe === 'Kirim' ? '-' : '+'}{t.jumlah.toLocaleString('id-ID')}
+                  </td>
+                  <td className="py-3 text-muted">{t.catatan || "-"}</td>
+                  <td className="py-3 text-center">
+                    {/* Badge Tipe Transaksi */}
+                    <span className={`badge rounded-pill px-3 py-2 ${t.tipe === 'Kirim' ? 'bg-light text-dark border' : 'bg-primary'}`}>
+                      {t.tipe}
+                    </span>
+                  </td>
+                  <td className="py-3 text-center text-muted">
+                    {/* Lu bisa ganti ikon ini jadi tombol Detail kalau mau */}
+                    <i className="bi bi-info-circle"></i>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="small">
-                {history.map((h, index) => (
-                  <tr key={index}>
-                    <td className="text-muted">{h.timestamp}</td>
-                    <td>
-                      <div className="fw-bold text-dark">{h.member_name}</div>
-                      <div className="text-muted small">{h.member_email}</div>
-                    </td>
-                    <td className={`fw-bold ${h.type === 'Kirim' ? 'text-danger' : 'text-success'}`}>
-                      {h.type === 'Kirim' ? '-' : '+'}{h.miles.toLocaleString("id-ID")}
-                    </td>
-                    <td className="text-muted">{h.note}</td>
-                    <td>
-                      <span className={`badge rounded-pill ${h.type === 'Kirim' ? 'bg-light text-dark border' : 'bg-primary'}`} style={{ fontSize: "0.7rem", padding: "4px 12px" }}>
-                        {h.type}
-                      </span>
-                    </td>
-                    <td>
-                      <i className="bi bi-lock-fill text-muted" style={{ cursor: "not-allowed" }} title="Tidak dapat diubah"></i>
-                    </td>
-                  </tr>
-                ))}
-                {history.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-4 text-muted">Belum ada riwayat transfer.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Modal Transfer */}
-      <div className="modal fade" id="transferModal" tabIndex={-1} aria-labelledby="transferModalLabel" aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content border-0 shadow" style={{ borderRadius: "12px" }}>
-            <div className="modal-header border-bottom-0 pb-0">
-              <h5 className="modal-title fw-bold" id="transferModalLabel">Transfer Miles</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={handleTransfer}>
-                {error && (
-                  <div className="alert alert-danger small mb-3" role="alert">
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div className="alert alert-success small mb-3" role="alert">
-                    {success}
-                  </div>
-                )}
+      {/* MODAL TRANSFER (Gambar 2 - image_f9f31c) */}
+      {showModal && (
+        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg p-3" style={{ borderRadius: "16px" }}>
+              <div className="modal-header border-0 pb-0">
+                <h5 className="fw-bold">Transfer Miles</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+              </div>
+              <form onSubmit={handleTransfer} className="modal-body p-4">
                 <div className="mb-3">
                   <label className="form-label fw-semibold small">Email Penerima</label>
-                  <input type="email" name="recipient_email" className="form-control" placeholder="member@example.com" required />
+                  <input type="email" className="form-control" placeholder="contoh@mail.com" onChange={(e) => setFormData({...formData, to_email: e.target.value})} required />
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-semibold small">Jumlah Miles</label>
-                  <input type="number" name="amount" className="form-control" placeholder="0" min="100" required />
-                  <div className="form-text small">Maksimal transfer: {awardMiles !== null ? awardMiles.toLocaleString("id-ID") : "Sedang dimuat..."} miles.</div>
+                  <input type="number" className="form-control" placeholder="0" min="1" max={availableMiles} onChange={(e) => setFormData({...formData, amount: parseInt(e.target.value)})} required />
+                  <small className="text-muted">Maksimal: {availableMiles.toLocaleString()} miles</small>
                 </div>
                 <div className="mb-4">
                   <label className="form-label fw-semibold small">Catatan (opsional)</label>
-                  <textarea name="note" className="form-control" rows={3} placeholder="Hadiah"></textarea>
+                  <textarea className="form-control" rows={3} placeholder="Contoh: Hadiah ulang tahun" onChange={(e) => setFormData({...formData, catatan: e.target.value})}></textarea>
                 </div>
                 <div className="d-flex justify-content-end">
-                  <button type="submit" disabled={isSubmitting} className="btn btn-primary px-4" style={{ backgroundColor: "#1E3A8A", borderRadius: "6px" }}>
-                    {isSubmitting ? "Sedang mengirim..." : "Transfer"}
+                  <button type="submit" disabled={loading} className="btn btn-primary px-4 fw-semibold" style={{ backgroundColor: "#0A2463", borderRadius: "8px" }}>
+                    {loading ? "Memproses..." : "Transfer Sekarang"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
-      </div>
-    </>
+      )}
+
+    </div>
   );
 }

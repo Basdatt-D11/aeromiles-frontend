@@ -6,11 +6,23 @@ interface User {
   email: string;
   role: "MEMBER" | "STAFF";
   nama: string;
+  salutation?: string;
+  first_mid_name?: string;
+  last_name?: string;
+  country_code?: string;
+  mobile_number?: string;
+  tanggal_lahir?: string;
+  kewarganegaraan?: string;
+  nomor_member?: string;
+  tanggal_bergabung?: string;
+  id_staf?: string;
+  kode_maskapai?: string;
   award_miles?: number;
 }
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   login: (user: User) => void;
   logout: () => void;
 }
@@ -19,6 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("aeromiles_user");
@@ -30,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         window.localStorage.removeItem("aeromiles_user");
       }
     }
+    setIsLoading(false);
   }, []);
 
   const login = (userData: User) => {
@@ -43,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
