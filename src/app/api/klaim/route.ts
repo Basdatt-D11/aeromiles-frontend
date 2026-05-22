@@ -38,3 +38,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: error.message.replace("ERROR: ", "") }, { status: 400 });
   }
 }
+
+// FUNGSI BARU: UPDATE (EDIT)
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { id_klaim, maskapai, bandara_asal, bandara_tujuan, tanggal_penerbangan, flight_number, nomor_tiket, kelas_kabin, pnr } = body;
+
+    await pool.query(
+      `UPDATE CLAIM_MISSING_MILES 
+       SET maskapai=$1, bandara_asal=$2, bandara_tujuan=$3, tanggal_penerbangan=$4, 
+           flight_number=$5, nomor_tiket=$6, kelas_kabin=$7, pnr=$8
+       WHERE id_klaim = $9 AND status_penerimaan = 'Menunggu'`,
+      [maskapai, bandara_asal, bandara_tujuan, tanggal_penerbangan, flight_number, nomor_tiket, kelas_kabin, pnr, id_klaim]
+    );
+
+    return NextResponse.json({ success: true, message: "Klaim berhasil diupdate" });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+  }
+}
+
+// FUNGSI BARU: DELETE (HAPUS)
+export async function DELETE(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+
+    await pool.query("DELETE FROM CLAIM_MISSING_MILES WHERE id_klaim = $1 AND status_penerimaan = 'Menunggu'", [id]);
+    return NextResponse.json({ success: true, message: "Klaim berhasil dihapus" });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+  }
+}

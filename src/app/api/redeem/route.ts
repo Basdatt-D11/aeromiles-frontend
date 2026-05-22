@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       "INSERT INTO REDEEM (email_member, kode_hadiah, timestamp) VALUES ($1, $2, NOW())",
       [email_member, kode_hadiah]
     );
-
+1
     await client.query('COMMIT');
 
     return NextResponse.json({ message: "Redeem Berhasil!" }, { status: 200 });

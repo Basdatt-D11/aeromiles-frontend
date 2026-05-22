@@ -140,7 +140,7 @@ export default function ProfileSettings() {
                   <label className="form-label fw-semibold small">Tanggal Lahir</label>
                   <input type="date" className="form-control" defaultValue={user?.tanggal_lahir ? new Date(user.tanggal_lahir).toISOString().split('T')[0] : ""} required />
                 </div>
-                {user?.role === 'Staff' && (
+                {user?.role === 'STAFF' && (
                   <div className="col-md-6">
                     <label className="form-label fw-semibold small">Kode Maskapai</label>
                     <select className="form-select" defaultValue={user?.kode_maskapai || "GA"} required>

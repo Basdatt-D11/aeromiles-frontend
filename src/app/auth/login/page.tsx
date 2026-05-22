@@ -39,9 +39,9 @@ export default function Login() {
       <div className="col-md-5">
         <div className="card shadow-sm border-0">
           <div className="card-body p-5">
-            <div className="text-center mb-4">
+            <div className="text-center mb-4 w-100">
               <i className="bi bi-airplane-fill text-primary" style={{ fontSize: "2.5rem" }}></i>
-              <h3 className="fw-bold mt-2">Masuk ke AeroMiles</h3>
+              <h3 className="fw-bold mt-2 text-center w-100">Masuk ke AeroMiles</h3>
               <p className="text-muted">Masukkan email dan password Anda</p>
             </div>
 

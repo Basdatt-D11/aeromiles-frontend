@@ -6,12 +6,23 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const email = url.searchParams.get("email");
 
-    let query = "SELECT * FROM IDENTITAS";
+    let query = `
+      SELECT *, 
+        CASE 
+          WHEN tgl_habis >= CURRENT_DATE THEN 'Aktif'
+          ELSE 'Tidak Aktif'
+        END as status 
+      FROM IDENTITAS
+    `;
     let params: any[] = [];
 
     if (email) {
       query = `
-        SELECT i.* 
+        SELECT i.*, 
+          CASE 
+            WHEN i.tgl_habis >= CURRENT_DATE THEN 'Aktif'
+            ELSE 'Tidak Aktif'
+          END as status 
         FROM IDENTITAS i
         JOIN MEMBER m ON i.nomor_member = m.nomor_member
         WHERE m.email = $1
@@ -30,16 +41,23 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis, status } = body;
+    // Pastiin nama field ini SAMA PERSIS sama yang dikirim dari form Frontend
+    const { no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis } = body;
+
+    // Tambahin pengecekan biar gak kosong
+    if (!no_dokumen || !nomor_member) {
+        return NextResponse.json({ success: false, message: "Data tidak lengkap" }, { status: 400 });
+    }
 
     await pool.query(
-      `INSERT INTO IDENTITAS (no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis, status || 'Aktif']
+      `INSERT INTO IDENTITAS (no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis]
     );
 
     return NextResponse.json({ success: true, message: "Identitas berhasil ditambahkan!" }, { status: 201 });
   } catch (error: any) {
+    console.error("Error POST:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });
   }
 }
@@ -47,13 +65,13 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { no_dokumen, tgl_habis, tgl_terbit, negara, jenis, status } = body;
+    const { no_dokumen, tgl_habis, tgl_terbit, negara, jenis } = body;
 
     const result = await pool.query(
       `UPDATE IDENTITAS 
-       SET tgl_habis = $1, tgl_terbit = $2, negara = $3, jenis = $4, status = $5 
-       WHERE no_dokumen = $6`,
-      [tgl_habis, tgl_terbit, negara, jenis, status, no_dokumen]
+       SET tgl_habis = $1, tgl_terbit = $2, negara = $3, jenis = $4 
+       WHERE no_dokumen = $5`,
+      [tgl_habis, tgl_terbit, negara, jenis, no_dokumen]
     );
 
     if (result.rowCount === 0) {

@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     if (!user.is_password_valid) {
       return Response.json({ 
         success: false, 
-        message: "Password salah cuy!" 
+        message: "Password anda salah!" 
       }, { status: 401 });
     }
 
