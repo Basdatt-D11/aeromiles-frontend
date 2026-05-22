@@ -10,10 +10,14 @@ export async function GET(request: Request) {
 
     // 1. Tarik Data Utama (JOIN 3 Tabel)
     const userResult = await pool.query(`
-      SELECT p.*, m.nomor_member, m.award_miles, m.total_miles, m.tanggal_bergabung, t.nama as nama_tier
+      SELECT p.*, 
+            m.nomor_member, m.award_miles, m.total_miles, m.tanggal_bergabung, 
+            t.nama as nama_tier,
+            s.id_staf, s.kode_maskapai
       FROM PENGGUNA p
       LEFT JOIN MEMBER m ON p.email = m.email
       LEFT JOIN TIER t ON m.id_tier = t.id_tier
+      LEFT JOIN STAF s ON p.email = s.email
       WHERE p.email = $1
     `, [email]);
 

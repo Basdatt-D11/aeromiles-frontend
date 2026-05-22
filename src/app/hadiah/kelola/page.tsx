@@ -15,9 +15,8 @@ export default function KelolaHadiah() {
 
   const fetchHadiah = async () => {
     try {
-      const res = await fetch(`/api/hadiah?kode=${selectedItem.kode}`, { 
-        method: "DELETE" 
-      });
+      // ✅ Cuma nge-GET data dari API, nggak ada unsur DELETE di sini
+      const res = await fetch("/api/hadiah"); 
       const data = await res.json();
       if (data.success) setHadiah(data.data);
     } catch (error) {
@@ -79,22 +78,24 @@ export default function KelolaHadiah() {
   };
 
   const executeDelete = async () => {
-    if (!selectedItem) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/hadiah?kode=${selectedItem.kode_hadiah}`, { method: "DELETE" });
-      if (res.ok) {
-        fetchHadiah();
-        setShowDeleteModal(false);
-      } else {
-        alert("Gagal menghapus data.");
-      }
-    } catch (error) {
-      alert("Terjadi kesalahan sistem.");
-    } finally {
-      setLoading(false);
+  if (!selectedItem) return;
+  setLoading(true);
+  try {
+    // Pastikan di sini lu pake 'kode' (sesuai nama kolom PK di DB)
+    const res = await fetch(`/api/hadiah?kode=${selectedItem.kode}`, { 
+      method: "DELETE" 
+    });
+    
+    if (res.ok) {
+      await fetchHadiah(); // Biar tabel auto-refresh
+      setShowDeleteModal(false);
     }
-  };
+  } catch (error) {
+    alert("Gagal menghapus");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Helper biar tanggal ISO dari database bisa dipasang di <input type="date">
   const formatDateForInput = (dateString: string) => {
@@ -178,9 +179,9 @@ export default function KelolaHadiah() {
                       <label className="form-label text-muted fw-semibold small">Kode Hadiah</label>
                       <input 
                         type="text" 
-                        name="kode_hadiah" 
+                        name="kode" 
                         className={`form-control ${isEditing ? 'bg-light' : ''}`} 
-                        defaultValue={selectedItem?.kode_hadiah} 
+                        defaultValue={selectedItem?.kode} 
                         readOnly={isEditing} 
                         placeholder="Contoh: RWD-001"
                         required 
@@ -242,7 +243,7 @@ export default function KelolaHadiah() {
                   <i className="bi bi-exclamation-triangle-fill text-danger" style={{ fontSize: "4rem" }}></i>
                 </div>
                 <h4 className="fw-bold mb-3">Hapus Hadiah?</h4>
-                <p className="text-muted px-2">Anda yakin ingin menghapus <b>{selectedItem?.nama}</b> ({selectedItem?.kode_hadiah}) secara permanen? Data yang dihapus tidak dapat dikembalikan.</p>
+                <p className="text-muted px-2">Anda yakin ingin menghapus <b>{selectedItem?.nama}</b> ({selectedItem?.kode}) secara permanen? Data yang dihapus tidak dapat dikembalikan.</p>
                 <div className="d-flex gap-2 justify-content-center mt-4">
                   <button className="btn btn-light px-4 fw-semibold" onClick={() => setShowDeleteModal(false)} style={{ borderRadius: "8px" }}>Batal</button>
                   <button className="btn btn-danger px-4 fw-semibold" disabled={loading} onClick={executeDelete} style={{ borderRadius: "8px" }}>
