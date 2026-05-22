@@ -47,33 +47,40 @@ export default function KelolaMitra() {
 
   // --- HANDLER ACTIONS ---
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const payload = Object.fromEntries(formData.entries());
-
-    try {
-      const method = isEditing ? "PUT" : "POST";
-      const res = await fetch("/api/mitra", {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        fetchMitra();
-        setShowFormModal(false);
-      } else {
-        alert(data.message || "Gagal menyimpan data mitra.");
-      }
-    } catch (error) {
-      alert("Terjadi kesalahan sistem.");
-    } finally {
-      setLoading(false);
-    }
+  e.preventDefault();
+  setLoading(true);
+  const formData = new FormData(e.currentTarget);
+  
+  // ✅ CARA YANG BENER: Bikin objek baru, jangan edit hasil Object.fromEntries
+  const payload = {
+    email: formData.get("email"),
+    nama: formData.get("nama"),
+    id_penyedia: parseInt(formData.get("id_penyedia") as string), // Konversi ke number
+    tanggal_kerja_sama: formData.get("tanggal_kerja_sama")
   };
+
+  try {
+    const method = isEditing ? "PUT" : "POST";
+    const res = await fetch("/api/mitra", {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload), // payload sekarang udah clean
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      fetchMitra();
+      setShowFormModal(false);
+    } else {
+      alert(data.message || "Gagal menyimpan.");
+    }
+  } catch (error) {
+    alert("Terjadi kesalahan sistem.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const executeDelete = async () => {
     if (!selectedItem) return;

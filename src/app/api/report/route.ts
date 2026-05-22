@@ -17,17 +17,19 @@ export async function GET() {
     const transactionsResult = await pool.query(`
       SELECT 
         'Klaim' as tipe, 
+        id as id,
         email_member as email, 
         1000 as miles, 
         timestamp as waktu 
-      FROM CLAIM_MISSING_MILES
+      FROM claim_missing_miles
       UNION ALL
       SELECT 
-        'Transfer' as tipe, 
+        'Transfer' as tipe,
+        NULL as id,
         email_member_1 as email, 
         jumlah * -1 as miles, 
-        transfer_timestamp as waktu 
-      FROM TRANSFER
+        transfer_timestamp as waktu
+      FROM transfer
       ORDER BY waktu DESC LIMIT 20
     `);
 
@@ -51,13 +53,23 @@ export async function DELETE(request: Request) {
   const email = searchParams.get("email");
   const waktu = searchParams.get("waktu");
   const tipe = searchParams.get("tipe");
+  const email2 = searchParams.get("email2"); // untuk transfer
 
-  if (tipe === 'Transfer') {
-    // Hapus dari tabel TRANSFER
-    await pool.query("DELETE FROM TRANSFER WHERE email_member_1 = $1 AND transfer_timestamp = $2", [email, waktu]);
-  } else if (tipe === 'Klaim') {
-    // Hapus dari tabel CLAIM_MISSING_MILES
-    await pool.query("DELETE FROM CLAIM_MISSING_MILES WHERE email_member = $1 AND timestamp = $2", [email, waktu]);
+  try {
+    if (tipe === 'Transfer') {
+      await pool.query(
+        "DELETE FROM transfer WHERE email_member_1 = $1 AND transfer_timestamp = $2",
+        [email, waktu]
+      );
+    } else if (tipe === 'Klaim') {
+      await pool.query(
+        "DELETE FROM claim_missing_miles WHERE id = $1",
+        [searchParams.get("id")]
+      );
+    }
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
-  return NextResponse.json({ success: true });
 }
+

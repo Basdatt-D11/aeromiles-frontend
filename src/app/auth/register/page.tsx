@@ -96,6 +96,7 @@ export default function Register() {
                   <select name="kewarganegaraan" className="form-select" required>
                     <option value="Indonesia">Indonesia</option>
                     <option value="Singapore">Singapore</option>
+                    <option value="Singapore">Malaysia</option>
                   </select>
                 </div>
                 <div className="col-md-4">

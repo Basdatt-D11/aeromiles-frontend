@@ -246,11 +246,36 @@ export default function RiwayatKlaim() {
               <form onSubmit={handleSubmit} className="modal-body p-4">
                 <div className="mb-3">
                   <label className="form-label fw-semibold small">Maskapai</label>
-                  <input type="text" className="form-control" value={formData.maskapai} onChange={(e) => setFormData({...formData, maskapai: e.target.value})} required />
+                  <select className="form-select" value={formData.maskapai} 
+                    onChange={(e) => setFormData({...formData, maskapai: e.target.value})} required>
+                    <option value="">-- Pilih Maskapai --</option>
+                    <option value="AA">American Airlines</option>
+                    <option value="EK">Emirates</option>
+                    <option value="GA">Garuda Indonesia</option>
+                    <option value="SQ">Singapore Airlines</option>
+                  </select>
                 </div>
                 <div className="row g-3 mb-3">
-                  <div className="col-6"><label className="small fw-semibold">Asal (IATA)</label><input className="form-control" maxLength={3} value={formData.bandara_asal} onChange={(e) => setFormData({...formData, bandara_asal: e.target.value.toUpperCase()})} required /></div>
-                  <div className="col-6"><label className="small fw-semibold">Tujuan (IATA)</label><input className="form-control" maxLength={3} value={formData.bandara_tujuan} onChange={(e) => setFormData({...formData, bandara_tujuan: e.target.value.toUpperCase()})} required /></div>
+                  <div className="col-6">
+                    <label className="small fw-semibold">Asal (IATA)</label>
+                    <select className="form-select" value={formData.bandara_asal}
+                      onChange={(e) => setFormData({...formData, bandara_asal: e.target.value})} required>
+                      <option value="">-- Pilih Asal --</option>
+                      <option value="CGK">CGK - Soekarno-Hatta, Jakarta</option>
+                      <option value="DPS">DPS - Ngurah Rai, Bali</option>
+                      <option value="SIN">SIN - Changi, Singapore</option>
+                    </select>
+                  </div>
+                  <div className="col-6">
+                    <label className="small fw-semibold">Tujuan (IATA)</label>
+                    <select className="form-select" value={formData.bandara_tujuan}
+                      onChange={(e) => setFormData({...formData, bandara_tujuan: e.target.value})} required>
+                      <option value="">-- Pilih Tujuan --</option>
+                      <option value="CGK">CGK - Soekarno-Hatta, Jakarta</option>
+                      <option value="DPS">DPS - Ngurah Rai, Bali</option>
+                      <option value="SIN">SIN - Changi, Singapore</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="row g-3 mb-4">
                   <div className="col-4"><label className="small fw-semibold">Tanggal</label><input type="date" className="form-control" value={formData.tanggal_penerbangan} onChange={(e) => setFormData({...formData, tanggal_penerbangan: e.target.value})} required /></div>

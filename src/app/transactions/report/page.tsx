@@ -1,30 +1,52 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Swal from 'sweetalert2';  // TAMBAH INI
 
 export default function LaporanTransaksi() {
   const [activeTab, setActiveTab] = useState<'riwayat' | 'top'>('riwayat');
   const [report, setReport] = useState<any>({ transactions: [], claim_stats: [], transfer_stats: { total_miles_transferred: 0 }, redeem_stats: [] });
   const [topMembers, setTopMembers] = useState<any[]>([]);
 
-  const [top5Message, setTop5Message] = useState<string | null>(null);
-
-  useEffect(() => {
-    // 1. Fetch data statistik (klaim/transfer)
+  const fetchReport = () => {
     fetch("/api/report").then(res => res.json()).then(data => {
       if (data.success) setReport(data.data);
     });
-    
-    // 2. Fetch data tabel Top Member (yang baru kita buat)
-    fetch("/api/report/top_members").then(res => res.json()).then(data => {
+  };
+
+  useEffect(() => {
+    fetchReport();
+    fetch("/api/report/top5").then(res => res.json()).then(data => {
       if (data.success) setTopMembers(data.data);
     });
-    
-    // 3. Fetch pesan dari Dosen
-    fetch("/api/report/top5").then(res => res.json()).then(data => {
-      if (data.success) setTop5Message(data.message);
-    });
   }, []);
+
+  const handleDelete = async (t: any) => {
+  const confirm = await Swal.fire({
+    title: 'Hapus transaksi ini?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    confirmButtonText: 'Hapus',
+    cancelButtonText: 'Batal'
+  });
+  if (!confirm.isConfirmed) return;
+
+  const params = new URLSearchParams({ 
+    email: t.email, 
+    waktu: t.waktu, 
+    tipe: t.tipe,
+    ...(t.id && { id: t.id })
+  });
+
+  const res = await fetch(`/api/report?${params}`, { method: 'DELETE' });
+  if (res.ok) {
+    Swal.fire({ icon: 'success', title: 'Terhapus!', timer: 1500, showConfirmButton: false });
+    fetchReport();
+  } else {
+    Swal.fire({ icon: 'error', title: 'Gagal menghapus.' });
+  }
+};
 
   return (
     <div className="container-fluid p-4">
@@ -67,7 +89,11 @@ export default function LaporanTransaksi() {
           <table className="table align-middle mb-0">
             <thead className="table-light text-muted small">
               <tr>
-                <th className="px-4 py-3">Tipe</th><th>Email Member</th><th>Miles</th><th>Waktu</th>
+                <th className="px-4 py-3">Tipe</th>
+                <th>Email Member</th>
+                <th>Miles</th>
+                <th>Waktu</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -77,6 +103,11 @@ export default function LaporanTransaksi() {
                   <td>{t.email}</td>
                   <td className={`fw-bold ${t.miles > 0 ? 'text-success' : 'text-danger'}`}>{t.miles > 0 ? `+${t.miles}` : t.miles}</td>
                   <td className="text-muted small">{new Date(t.waktu).toLocaleString()}</td>
+                  <td>
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(t)}>
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -37,12 +37,12 @@ export default function Navbar() {
                   <span className="nav-text">Kelola Member</span>
                 </Link>
                 
-                <Link className={`nav-item-aero ${getActiveClass('/klaim')}`} href="/kelola_klaim">
+                {/* Perhatikan: href dan getActiveClass harus sama string-nya */}
+                <Link className={`nav-item-aero ${getActiveClass('/kelola_klaim')}`} href="/kelola_klaim">
                   <i className="bi bi-airplane-engines-fill"></i>
                   <span className="nav-text">Kelola Klaim</span>
                 </Link>
 
-                {/* --- MENU TAMBAHAN STAFF --- */}
                 <Link className={`nav-item-aero ${getActiveClass('/hadiah')}`} href="/hadiah/kelola">
                   <i className="bi bi-gift-fill"></i>
                   <span className="nav-text">Kelola Hadiah</span>
@@ -53,7 +53,8 @@ export default function Navbar() {
                   <span className="nav-text">Kelola Mitra</span>
                 </Link>
 
-                <Link className={`nav-item-aero ${getActiveClass('/laporan')}`} href="/transactions/report">
+                {/* Perhatikan: Sesuai href="/transactions/report" */}
+                <Link className={`nav-item-aero ${getActiveClass('/transactions/report')}`} href="/transactions/report">
                   <i className="bi bi-file-earmark-text-fill"></i>
                   <span className="nav-text">Laporan Transaksi</span>
                 </Link>
