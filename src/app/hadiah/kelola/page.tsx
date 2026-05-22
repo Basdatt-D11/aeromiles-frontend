@@ -15,7 +15,9 @@ export default function KelolaHadiah() {
 
   const fetchHadiah = async () => {
     try {
-      const res = await fetch("/api/hadiah");
+      const res = await fetch(`/api/hadiah?kode=${selectedItem.kode}`, { 
+        method: "DELETE" 
+      });
       const data = await res.json();
       if (data.success) setHadiah(data.data);
     } catch (error) {

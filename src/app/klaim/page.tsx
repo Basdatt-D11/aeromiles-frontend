@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
+import Swal from 'sweetalert2'; // ✅ Import SweetAlert2
 
 export default function RiwayatKlaim() {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ export default function RiwayatKlaim() {
   const fetchKlaim = async () => {
     if (!user?.email) return;
     try {
-      const res = await fetch(`/api/klaim?email=${user.email}`);
+      const res = await fetch(`/api/klaim?email=${user.email}`, { cache: "no-store" });
       const json = await res.json();
       if (json.success) setDataKlaim(json.data);
     } catch (error) {
@@ -49,7 +50,7 @@ export default function RiwayatKlaim() {
 
   const handleOpenEdit = (item: any) => {
     setFormData({
-      id_klaim: item.id_klaim || item.nomor_klaim,
+      id_klaim: item.id || item.nomor_klaim,
       maskapai: item.maskapai,
       bandara_asal: item.bandara_asal,
       bandara_tujuan: item.bandara_tujuan,
@@ -67,45 +68,90 @@ export default function RiwayatKlaim() {
     setItemToDelete(item); 
     setShowDeleteModal(true); 
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const method = isEditing ? "PUT" : "POST";
-    const payload = { ...formData, email: user?.email, nomor_member: user?.nomor_member };
+    
+    const payload = {
+      id_klaim: formData.id_klaim,
+      email_member: user?.email,
+      maskapai: formData.maskapai,
+      bandara_asal: formData.bandara_asal,
+      bandara_tujuan: formData.bandara_tujuan,
+      tanggal_penerbangan: formData.tanggal_penerbangan,
+      flight_number: formData.nomor_penerbangan,
+      nomor_tiket: formData.nomor_tiket,
+      kelas_kabin: formData.kelas_kabin,
+      pnr: formData.pnr,
+    };
 
     try {
       const res = await fetch("/api/klaim", {
-        method: method,
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const json = await res.json();
+      
+      // ✅ Pasang SweetAlert di sini
       if (json.success) {
         setShowFormModal(false);
         fetchKlaim();
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Data klaim berhasil disimpan.',
+          confirmButtonColor: '#0A2463'
+        });
+      } else {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: json.message || "Gagal menyimpan", confirmButtonColor: '#d33' });
       }
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error(error); 
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan sistem.' });
+    }
   };
 
   const confirmDelete = async () => {
     try {
-      const id = itemToDelete.id_klaim || itemToDelete.nomor_klaim;
+      // ✅ 1. AMBIL ID YANG BENAR (Sesuai kolom di DB lu yaitu 'id')
+      const id = itemToDelete.id; 
+      
       const res = await fetch(`/api/klaim?id=${id}`, { method: "DELETE" });
       const json = await res.json();
+      
+      // ✅ 2. TUTUP MODAL DULUAN! Biar pop-up SweetAlert gak ketimpa di belakang
+      setShowDeleteModal(false); 
+
       if (json.success) {
-        setShowDeleteModal(false); 
         fetchKlaim(); 
+        Swal.fire({
+          icon: 'success',
+          title: 'Dihapus!',
+          text: 'Klaim berhasil dihapus.',
+          confirmButtonColor: '#0A2463'
+        });
+      } else {
+        Swal.fire({ 
+          icon: 'error', 
+          title: 'Gagal', 
+          text: json.message || "Gagal menghapus", 
+          confirmButtonColor: '#d33' 
+        });
       }
     } catch (error) {
       console.error("Gagal hapus:", error);
+      // Tutup modal juga kalau masuk catch (error sistem)
+      setShowDeleteModal(false); 
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan sistem.' });
     }
   };
 
   // --- FILTERS & BADGES ---
   const filteredData = dataKlaim.filter((item) => {
     if (activeFilter === "Semua") return true;
-    
     const statusDB = item.status_penerimaan || "Menunggu";
-    
     return statusDB === activeFilter;
   });
 
@@ -119,7 +165,6 @@ export default function RiwayatKlaim() {
   return (
     <div className="container-fluid p-4" style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}>
       
-      {/* Header (Gambar 2 - image_fadea0) */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="fw-bold mb-1">Klaim Missing Miles</h2>
@@ -130,7 +175,6 @@ export default function RiwayatKlaim() {
         </button>
       </div>
 
-      {/* Filter Tabs (Gambar 2 - image_fadea0) */}
       <div className="d-flex gap-2 mb-4">
         {["Semua", "Menunggu", "Disetujui", "Ditolak"].map((tab) => (
           <button key={tab} onClick={() => setActiveFilter(tab)}
@@ -141,7 +185,6 @@ export default function RiwayatKlaim() {
         ))}
       </div>
 
-      {/* Tabel (Berhenti seadanya data - image_fae35c) */}
       <div className="card shadow-sm border-0 mb-5" style={{ borderRadius: "12px", height: "fit-content" }}>
         <div className="card-body p-0">
           <table className="table table-hover mb-0">
@@ -161,37 +204,25 @@ export default function RiwayatKlaim() {
               {filteredData.map((item, idx) => (
                 <tr key={idx} className="align-middle border-bottom">
                   <td className="py-3 px-4 fw-semibold text-dark">
-                    {item.id_klaim || `CLM-${item.id || idx+100}`} 
+                    {item.id || item.id_klaim || `CLM-${idx+100}`}
                   </td>
                   <td className="py-3 px-4">{item.maskapai}</td>
                   <td className="py-3 px-4 text-muted">{item.bandara_asal} ➔ {item.bandara_tujuan}</td>
                   <td className="py-3 px-4">{new Date(item.tanggal_penerbangan).toLocaleDateString('id-ID')}</td>
-                  <td className="py-3 px-4">{item.nomor_penerbangan}</td>
+                  <td className="py-3 px-4">{item.flight_number || item.nomor_penerbangan}</td>
                   <td className="py-3 px-4">{item.kelas_kabin}</td>
                   <td className="py-3 px-4">{getStatusBadge(item.status_penerimaan)}</td>
                   <td className="py-3 px-4 text-center">
-                    {/* Logika: Hanya munculkan tombol jika statusnya persis 'Menunggu' */}
                     {item.status_penerimaan === 'Menunggu' ? (
                       <>
-                        {/* Tombol Edit (Ikon Pensil) */}
-                        <button 
-                          onClick={() => handleOpenEdit(item)} 
-                          className="btn btn-sm btn-outline-secondary me-2" 
-                          style={{ border: "none", backgroundColor: "transparent" }}
-                        >
+                        <button onClick={() => handleOpenEdit(item)} className="btn btn-sm btn-outline-secondary me-2" style={{ border: "none", backgroundColor: "transparent" }}>
                           <i className="bi bi-pencil" style={{ color: "#6B7280" }}></i>
                         </button>
-
-                        {/* Tombol Hapus (Ikon Tong Sampah) */}
-                        <button 
-                          onClick={() => prepareDelete(item)} 
-                          className="btn btn-sm btn-outline-danger"
-                        >
+                        <button onClick={() => prepareDelete(item)} className="btn btn-sm btn-outline-danger">
                           <i className="bi bi-trash"></i>
                         </button>
                       </>
                     ) : (
-                      /* Jika status sudah Disetujui/Ditolak, tampilkan strip saja */
                       <span className="text-muted small">-</span>
                     )}
                   </td>
@@ -204,7 +235,8 @@ export default function RiwayatKlaim() {
 
       {/* MODAL AJUKAN (modal-lg) */}
       {showFormModal && (
-        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}>
+        // ✅ Perbaikan Style Modal (position: fixed ditambahkan)
+        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1040, position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="modal-dialog modal-lg modal-dialog-centered">
             <div className="modal-content border-0 shadow-lg p-3" style={{ borderRadius: "16px" }}>
               <div className="modal-header border-0 pb-0">
@@ -232,9 +264,10 @@ export default function RiwayatKlaim() {
         </div>
       )}
 
-      {/* MODAL HAPUS (Presisi - image_faeabe) */}
+      {/* MODAL HAPUS */}
       {showDeleteModal && (
-        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}>
+        // ✅ Perbaikan Style Modal (position: fixed ditambahkan)
+        <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1040, position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "420px" }}>
             <div className="modal-content border-0 shadow-lg p-4" style={{ borderRadius: "16px" }}>
               <div className="modal-body p-0 text-start">

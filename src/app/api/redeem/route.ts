@@ -9,8 +9,8 @@ export async function POST(request: Request) {
     await client.query('BEGIN');
 
     const hadiahRes = await client.query(
-      "SELECT miles FROM HADIAH WHERE kode_hadiah = $1",
-      [kode_hadiah]
+      "SELECT miles FROM HADIAH WHERE kode = $1", // Ganti kode_hadiah jadi kode
+      [kode_hadiah] // Variabel array-nya biarin aja tetep kode_hadiah
     );
 
     if (hadiahRes.rows.length === 0) {

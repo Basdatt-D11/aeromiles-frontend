@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import Swal from 'sweetalert2';
 
 export default function BuyPackage() {
   const { user } = useAuth();
@@ -30,10 +31,20 @@ export default function BuyPackage() {
         body: JSON.stringify({ email: user.email, id_package: selectedPkg.id }),
       });
       const data = await res.json();
-      alert(data.message || "Pembelian Berhasil!");
-      if (res.ok) setShowModal(false);
+      
+      if (res.ok) {
+        setShowModal(false);
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: data.message || 'Pembelian Berhasil!',
+          confirmButtonColor: '#0A2463'
+        });
+      } else {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
+      }
     } catch (e) {
-      alert("Terjadi kesalahan sistem.");
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan sistem.' });
     } finally {
       setLoading(false);
     }

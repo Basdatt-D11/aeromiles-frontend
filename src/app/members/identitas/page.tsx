@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import Swal from 'sweetalert2';
 
 export default function IdentitasSaya() {
   const { user } = useAuth();
@@ -37,12 +38,12 @@ export default function IdentitasSaya() {
     
     const formData = new FormData(e.currentTarget);
     const payload = {
-      no_dokumen: formData.get("no_dokumen"),
+      no_dokumen: formData.get("nomor"),           // ✅
       jenis: formData.get("jenis"),
-      negara: formData.get("negara"),
-      tgl_terbit: formData.get("tgl_terbit"),
-      tgl_habis: formData.get("tgl_habis"),
-      nomor_member: user?.nomor_member // Sekarang aman!
+      negara: formData.get("negara_penerbit"),     // ✅
+      tgl_terbit: formData.get("tanggal_terbit"),  // ✅
+      tgl_habis: formData.get("tanggal_habis"),    // ✅
+      nomor_member: user?.nomor_member
     };
     payload.nomor_member = user?.nomor_member; 
 
@@ -56,10 +57,21 @@ export default function IdentitasSaya() {
       if (res.ok) {
         setShowAddModal(false);
         await fetchIdentitas(); 
-        alert("Identitas berhasil ditambahkan!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Identitas berhasil ditambahkan.',
+          confirmButtonColor: '#0A2463'
+        });
       } else {
         const err = await res.json();
-        alert(err.message || "Gagal menyimpan.");
+        // GANTI alert() JADI INI:
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal',
+          text: err.message || "Gagal menyimpan.",
+          confirmButtonColor: '#d33'
+        });
       }
     } catch (error) {
       alert("Terjadi kesalahan sistem.");

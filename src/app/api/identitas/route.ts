@@ -41,17 +41,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // Pastiin nama field ini SAMA PERSIS sama yang dikirim dari form Frontend
-    const { no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis } = body;
+    const { no_dokumen, jenis, negara, tgl_terbit, tgl_habis, nomor_member } = body;
+    console.log("PAYLOAD DITERIMA:", body);
 
     // Tambahin pengecekan biar gak kosong
-    if (!no_dokumen || !nomor_member) {
-        return NextResponse.json({ success: false, message: "Data tidak lengkap" }, { status: 400 });
+    if (!nomor_member) {
+      return NextResponse.json({ success: false, message: "Nomor member tidak ditemukan!" }, { status: 400 });
     }
 
     await pool.query(
-      `INSERT INTO IDENTITAS (no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis) 
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO IDENTITAS (no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis, status) 
+      VALUES ($1, $2, $3, $4, $5, $6, 'Aktif')`,
       [no_dokumen, nomor_member, tgl_habis, tgl_terbit, negara, jenis]
     );
 
