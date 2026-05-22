@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
+import Swal from 'sweetalert2';
 
 export default function TransferMiles() {
   const { user } = useAuth();
@@ -45,9 +46,20 @@ export default function TransferMiles() {
       if (json.success) {
         setShowModal(false);
         fetchData();
-        alert("Transfer Berhasil!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Transfer Berhasil!',
+          text: 'Miles sukses dikirim ke pengguna lain.',
+          confirmButtonColor: '#0A2463'
+        });
       } else {
-        alert(json.message);
+        // GANTI alert(json.message) JADI INI:
+        Swal.fire({
+          icon: 'error',
+          title: 'Transfer Gagal',
+          text: json.message,
+          confirmButtonColor: '#d33'
+        });
       }
     } catch (e) { console.error(e); }
     setLoading(false);
